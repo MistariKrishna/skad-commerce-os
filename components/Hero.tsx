@@ -10,11 +10,9 @@ import {
   type PointerEvent as RPointerEvent,
 } from "react";
 import Image from "next/image";
-import { Caveat } from "next/font/google";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import NavLink from "./NavLink";
-
-const hand = Caveat({ subsets: ["latin"], weight: ["500", "700"], display: "swap" });
+import { hand } from "@/lib/fonts";
 
 const BLUE = "#1e5eeb";
 const NAVY = "#0b1a3b";
