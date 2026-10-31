@@ -97,6 +97,28 @@ export default function Enquire() {
     };
   }, []);
 
+  // Receive the business type picked in the Solutions section
+  useEffect(() => {
+    const apply = (v: unknown) => {
+      if (typeof v === "string" && businessTypes.includes(v)) {
+        setData((d) => ({ ...d, businessType: v }));
+      }
+    };
+    const r = requestAnimationFrame(() => {
+      try {
+        apply(sessionStorage.getItem("skad-business"));
+      } catch {
+        /* ignore */
+      }
+    });
+    const onBiz = (e: Event) => apply((e as CustomEvent).detail);
+    window.addEventListener("skad:business", onBiz);
+    return () => {
+      cancelAnimationFrame(r);
+      window.removeEventListener("skad:business", onBiz);
+    };
+  }, []);
+
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setData((d) => ({ ...d, [key]: value }));
 
@@ -145,6 +167,7 @@ export default function Enquire() {
       setStatus("done");
       try {
         sessionStorage.removeItem("skad-brief");
+        sessionStorage.removeItem("skad-business");
       } catch {
         /* ignore */
       }
@@ -159,6 +182,9 @@ export default function Enquire() {
   };
 
   const err = (msg: string) => (showErrors && msg ? msg : undefined);
+
+  const hasBrief = data.capabilities.length > 0;
+  const hasBusiness = data.businessType !== initialState.businessType;
 
   return (
     <section id="enquire" className="relative overflow-hidden bg-ink py-24 text-white lg:py-32">
@@ -260,12 +286,17 @@ export default function Enquire() {
                           />
                         </Field>
                       </div>
-                      {data.capabilities.length > 0 && (
-                        <p className="flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/5 px-3.5 py-2.5 text-xs text-slate-300">
-                          <Check size={13} className="shrink-0 text-accent" />
-                          {`Your brief is attached: ${data.capabilities.length} ${
-                            data.capabilities.length === 1 ? "service" : "services"
-                          } picked. You can change them in the next step.`}
+                      {(hasBrief || hasBusiness) && (
+                        <p className="flex items-start gap-2 rounded-lg border border-accent/20 bg-accent/5 px-3.5 py-2.5 text-xs leading-relaxed text-slate-300">
+                          <Check size={13} className="mt-[2px] shrink-0 text-accent" />
+                          <span>
+                            {hasBrief &&
+                              `Your brief is attached: ${data.capabilities.length} ${
+                                data.capabilities.length === 1 ? "service" : "services"
+                              } picked. `}
+                            {hasBusiness && `Business type set to ${data.businessType}. `}
+                            You can change these in the next steps.
+                          </span>
                         </p>
                       )}
                     </>
