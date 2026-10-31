@@ -372,7 +372,7 @@ export default function Hero() {
   }`;
 
   return (
-    <section id="top" className="relative overflow-hidden bg-[#e6edf8] pb-20 pt-32 sm:pt-36 lg:pb-28 lg:pt-40">
+    <section id="top" className="relative overflow-hidden bg-[#ccd9ee] pb-20 pt-32 sm:pt-36 lg:pb-28 lg:pt-40">
       <div className="wrap grid items-center gap-12 lg:grid-cols-12 lg:gap-12">
         {/* copy */}
         <div className={`lg:col-span-5 ${enter}`}>
@@ -397,7 +397,7 @@ export default function Hero() {
               See our Work
             </NavLink>
           </div>
-          <p className="mt-8 text-sm text-slate-500">No obligation, just a conversation.</p>
+          <p className="mt-8 text-sm text-slate-600">No obligation, just a conversation.</p>
         </div>
 
         {/* idea → website canvas */}
@@ -466,7 +466,7 @@ export default function Hero() {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-slate-400">Live websites made by SKAD CommerceOS teams.</p>
+            <p className="text-xs text-slate-600">Live websites made by SKAD CommerceOS teams.</p>
           </div>
         </div>
       </div>

@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
-import { Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { Funnel_Display, Funnel_Sans, Martian_Mono } from "next/font/google";
 import "./globals.css";
 
-const sans = Inter_Tight({ subsets: ["latin"], variable: "--font-inter-tight", display: "swap" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
+const display = Funnel_Display({ subsets: ["latin"], variable: "--font-funnel-display", display: "swap" });
+const body = Funnel_Sans({ subsets: ["latin"], variable: "--font-funnel-sans", display: "swap" });
+const mono = Martian_Mono({ subsets: ["latin"], variable: "--font-martian", display: "swap" });
 
 export const metadata: Metadata = {
   title: "SKAD CommerceOS — Build, Launch, Grow",
   description:
-    "The operating system for building, launching and growing businesses. One connected commerce infrastructure, twelve capabilities.",
+    "SKAD CommerceOS is a commerce services team that builds, launches and grows brands for founders, D2C brands and traditional businesses.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className="bg-canvas font-sans text-ink antialiased">{children}</body>
     </html>
   );
