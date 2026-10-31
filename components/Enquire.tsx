@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { capabilities } from "@/lib/data";
 import Reveal from "./Reveal";
@@ -74,6 +74,29 @@ export default function Enquire() {
   const [showErrors, setShowErrors] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
 
+  // Receive the brief built in the Platform section ("Send this brief")
+  useEffect(() => {
+    const apply = (list: unknown) => {
+      if (!Array.isArray(list)) return;
+      const valid = list.filter((x): x is string => typeof x === "string");
+      if (valid.length) setData((d) => ({ ...d, capabilities: valid }));
+    };
+    const r = requestAnimationFrame(() => {
+      try {
+        const raw = sessionStorage.getItem("skad-brief");
+        if (raw) apply(JSON.parse(raw));
+      } catch {
+        /* ignore */
+      }
+    });
+    const onBrief = (e: Event) => apply((e as CustomEvent).detail);
+    window.addEventListener("skad:brief", onBrief);
+    return () => {
+      cancelAnimationFrame(r);
+      window.removeEventListener("skad:brief", onBrief);
+    };
+  }, []);
+
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setData((d) => ({ ...d, [key]: value }));
 
@@ -91,12 +114,7 @@ export default function Enquire() {
     phone: data.contactMethod !== "Email" && !data.phone.trim() ? "Add a number so we can reach you." : "",
   };
 
-  const stepValid = [
-    !errors.name && !errors.email,
-    !errors.capabilities,
-    !errors.company,
-    !errors.phone,
-  ];
+  const stepValid = [!errors.name && !errors.email, !errors.capabilities, !errors.company, !errors.phone];
 
   const next = () => {
     if (!stepValid[step]) {
@@ -123,7 +141,14 @@ export default function Enquire() {
     }
     setStatus("sending");
     // TODO: replace with a real request, e.g. fetch("/api/enquire", { method: "POST", body: JSON.stringify(data) })
-    window.setTimeout(() => setStatus("done"), 1200);
+    window.setTimeout(() => {
+      setStatus("done");
+      try {
+        sessionStorage.removeItem("skad-brief");
+      } catch {
+        /* ignore */
+      }
+    }, 1200);
   };
 
   const reset = () => {
@@ -235,6 +260,14 @@ export default function Enquire() {
                           />
                         </Field>
                       </div>
+                      {data.capabilities.length > 0 && (
+                        <p className="flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/5 px-3.5 py-2.5 text-xs text-slate-300">
+                          <Check size={13} className="shrink-0 text-accent" />
+                          {`Your brief is attached: ${data.capabilities.length} ${
+                            data.capabilities.length === 1 ? "service" : "services"
+                          } picked. You can change them in the next step.`}
+                        </p>
+                      )}
                     </>
                   )}
 
@@ -262,9 +295,7 @@ export default function Enquire() {
                           );
                         })}
                       </div>
-                      {err(errors.capabilities) && (
-                        <p className="mt-2 text-xs text-rose-400">{errors.capabilities}</p>
-                      )}
+                      {err(errors.capabilities) && <p className="mt-2 text-xs text-rose-400">{errors.capabilities}</p>}
                     </div>
                   )}
 
@@ -371,7 +402,7 @@ export default function Enquire() {
                 <p className="mt-4 text-[11px] leading-relaxed text-slate-500">
                   {step === 0 && "Next: the capabilities you need, your business and the best way to reach you. "}
                   By continuing you agree to our{" "}
-                  <a href="#" className="text-accent underline underline-offset-2">
+                  <a href="/privacy" className="text-accent underline underline-offset-2">
                     Privacy Policy
                   </a>
                   .
