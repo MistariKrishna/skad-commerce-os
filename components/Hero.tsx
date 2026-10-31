@@ -10,7 +10,7 @@ import {
   type PointerEvent as RPointerEvent,
 } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import NavLink from "./NavLink";
 import { hand } from "@/lib/fonts";
 
@@ -19,6 +19,8 @@ const NAVY = "#0b1a3b";
 const PAPER = "#dfe9f9";
 const GRID = "#c4d6f2";
 const REST = 42; // where the divider settles (%)
+const HOLD_MS = 5000; // how long each brand rests before auto-advancing
+const SPRING = "cubic-bezier(0.34,1.4,0.64,1)";
 
 /* ---------------- data ---------------- */
 
@@ -175,7 +177,7 @@ function ShapeEl({ s }: { s: Shape }) {
   if (s.t === "box" || s.t === "btn") {
     return (
       <div
-        className={`${hand.className} absolute grid place-items-center text-center`}
+        className={`${hand.className} absolute grid place-items-center overflow-hidden text-center`}
         style={{
           ...base,
           border: dash,
@@ -242,10 +244,11 @@ function SketchLayer({ d }: { d: Demo }) {
         <ShapeEl key={i} s={s} />
       ))}
 
+      {/* annotations: too small to read on phones, so only from 640px up */}
       {d.notes.map((n) => (
         <span
           key={n.text}
-          className={`${hand.className} pointer-events-none absolute whitespace-nowrap font-medium`}
+          className={`${hand.className} pointer-events-none absolute hidden whitespace-nowrap font-medium sm:block`}
           style={{
             left: `${n.x}%`,
             top: `${n.y}%`,
@@ -265,11 +268,11 @@ function SketchLayer({ d }: { d: Demo }) {
         style={{
           left: `${d.ideaAt.x}%`,
           top: `${d.ideaAt.y}%`,
-          width: "21cqw",
-          padding: "1.3cqw 1.5cqw",
+          width: "max(21cqw, 104px)",
+          padding: "max(1.3cqw, 6px) max(1.5cqw, 8px)",
           background: "#fff3b0",
           color: NAVY,
-          fontSize: "2.3cqw",
+          fontSize: "max(2.3cqw, 11px)",
           lineHeight: 1.1,
           transform: "rotate(-4deg)",
           boxShadow: "0 1cqw 2cqw rgba(11,26,59,0.22)",
@@ -283,17 +286,34 @@ function SketchLayer({ d }: { d: Demo }) {
 
 /* ---------------- hero ---------------- */
 
+type Box = { x: number; w: number };
+
 export default function Hero() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const barRef = useRef<HTMLSpanElement>(null);
+  const anim = useRef(0);
+  const dragging = useRef(false);
+  const touched = useRef(false);
+  const inView = useRef(true);
+  const nudged = useRef(false);
+
   const [active, setActive] = useState(0);
   const [pos, setPos] = useState(100);
   const [ready, setReady] = useState(false);
   const [hint, setHint] = useState(true);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const anim = useRef(0);
-  const dragging = useRef(false);
+  const [swept, setSwept] = useState(false);
+  const [auto, setAuto] = useState(true);
+  const [pop, setPop] = useState(0);
+  const [tab, setTab] = useState<Box | null>(null);
+  const [tabAnim, setTabAnim] = useState(false);
 
+  /* the wipe */
   const sweep = useCallback((delay: number) => {
     cancelAnimationFrame(anim.current);
+    setSwept(false);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const from = 100;
     const duration = 1500;
@@ -302,25 +322,109 @@ export default function Hero() {
     const tick = (now: number) => {
       if (reduce) {
         setPos(REST);
+        setSwept(true);
         return;
       }
       const p = Math.min(Math.max((now - start) / duration, 0), 1);
       setPos(from + (REST - from) * ease(p));
       if (p < 1) anim.current = requestAnimationFrame(tick);
+      else setSwept(true);
     };
     anim.current = requestAnimationFrame(tick);
   }, []);
 
   useEffect(() => {
     const r = requestAnimationFrame(() => setReady(true));
-    sweep(600);
+    sweep(700);
     return () => {
       cancelAnimationFrame(r);
       cancelAnimationFrame(anim.current);
     };
   }, [sweep]);
 
+  /* pause auto-advance when the hero is off screen */
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      inView.current = entries.some((e) => e.isIntersecting);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  /* one-time handle nudge after the first sweep */
+  useEffect(() => {
+    if (!swept || nudged.current || touched.current) return;
+    nudged.current = true;
+    const h = handleRef.current;
+    if (!h || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const a = h.animate(
+      [
+        { translate: "0 0" },
+        { translate: "-10px 0" },
+        { translate: "10px 0" },
+        { translate: "-6px 0" },
+        { translate: "4px 0" },
+        { translate: "0 0" },
+      ],
+      { duration: 1100, delay: 300, easing: "ease-in-out" }
+    );
+    return () => a.cancel();
+  }, [swept]);
+
+  /* auto-advance to the next brand after each sweep */
+  useEffect(() => {
+    if (!swept || !auto) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    let last = performance.now();
+    let acc = 0;
+    const tick = (now: number) => {
+      const dt = Math.min(now - last, 100);
+      last = now;
+      if (inView.current && !document.hidden && !dragging.current) acc += dt;
+      if (barRef.current) barRef.current.style.width = `${Math.min(100, (acc / HOLD_MS) * 100)}%`;
+      if (acc >= HOLD_MS) {
+        setActive((a) => (a + 1) % demos.length);
+        setPos(100);
+        sweep(0);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (barRef.current) barRef.current.style.width = "0%";
+    };
+  }, [swept, auto, active, sweep]);
+
+  /* sliding tab pill */
+  useEffect(() => {
+    const measure = () => {
+      const b = tabRefs.current[active];
+      if (!b) return;
+      setTab({ x: b.offsetLeft, w: b.offsetWidth });
+      requestAnimationFrame(() => setTabAnim(true));
+    };
+    const r = requestAnimationFrame(measure);
+    document.fonts?.ready.then(measure);
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(r);
+      window.removeEventListener("resize", measure);
+    };
+  }, [active]);
+
+  const takeOver = () => {
+    touched.current = true;
+    setAuto(false);
+    setHint(false);
+  };
+
   const choose = (i: number) => {
+    takeOver();
     if (i === active) return;
     setActive(i);
     setPos(100);
@@ -336,8 +440,9 @@ export default function Hero() {
 
   const onPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
     cancelAnimationFrame(anim.current);
+    setSwept(true);
+    takeOver();
     dragging.current = true;
-    setHint(false);
     e.currentTarget.setPointerCapture(e.pointerId);
     setFromX(e.clientX);
   };
@@ -360,46 +465,77 @@ export default function Hero() {
     if (next === null) return;
     e.preventDefault();
     cancelAnimationFrame(anim.current);
-    setHint(false);
+    setSwept(true);
+    takeOver();
     setPos(Math.min(100, Math.max(0, next)));
   };
 
   const demo = demos[active];
-  const enter = `transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] ${
-    ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-  }`;
+
+  // staggered entrance
+  const enter = (delay: number) => ({
+    className: `transition-[opacity,translate] duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] ${
+      ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+    }`,
+    style: { transitionDelay: `${delay}ms` } as CSSProperties,
+  });
 
   return (
-    <section id="top" className="relative overflow-hidden bg-[#ccd9ee] pb-20 pt-32 sm:pt-36 lg:pb-28 lg:pt-40">
-      <div className="wrap grid items-center gap-12 lg:grid-cols-12 lg:gap-12">
-        {/* copy */}
-        <div className={`lg:col-span-5 ${enter}`}>
-          <h1 className="text-balance text-[2.5rem] font-bold leading-[1.04] tracking-[-0.03em] text-[#0b1a3b] sm:text-[3.3rem] lg:text-[3.4rem] xl:text-[3.8rem]">
+    <section ref={sectionRef} id="top" className="relative overflow-hidden bg-[#ccd9ee] pb-20 pt-32 sm:pt-36 lg:pb-28 lg:pt-40">
+      {/* blueprint grid, fading out at the edges */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(30,94,235,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(30,94,235,0.08) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+          maskImage: "radial-gradient(ellipse 75% 70% at 60% 45%, #000 35%, transparent 80%)",
+        }}
+      />
+
+      <div className="wrap relative grid items-center gap-12 lg:grid-cols-12 lg:gap-12">
+        {/* ---------- copy ---------- */}
+        <div className="lg:col-span-5">
+          <h1
+            {...enter(0)}
+            className={`${enter(0).className} text-balance text-[2.5rem] font-bold leading-[1.04] tracking-[-0.03em] text-[#0b1a3b] sm:text-[3.3rem] lg:text-[3.4rem] xl:text-[3.8rem]`}
+          >
             You bring the idea. We build the brand, the store and the sales.
           </h1>
-          <p className="mt-6 max-w-md text-[17px] leading-relaxed text-slate-600">
-            SKAD CommerceOS is a commerce services team. We’ve taken our own brands from first sketch to a running
-            business. Now we do it for founders, D2C brands and traditional businesses.
+          <p {...enter(120)} className={`${enter(120).className} mt-6 max-w-md text-[17px] leading-relaxed text-slate-600`}>
+            SKAD CommerceOS is a commerce services team. We’ve taken brands from first sketch to a running business,
+            for founders, D2C brands and traditional businesses.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+
+          <div {...enter(240)} className={`${enter(240).className} mt-8 flex flex-wrap items-center gap-x-6 gap-y-4`}>
             <NavLink
               href="/enquire"
-              className="rounded-lg bg-[#1e5eeb] px-6 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_-12px_rgba(30,94,235,0.8)] transition-[background-color,transform] duration-200 hover:bg-[#164bc2] active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1e5eeb]"
+              onClick={() => setPop((v) => v + 1)}
+              className="group inline-flex rounded-xl bg-[#1e5eeb] text-[15px] font-semibold text-white shadow-[0_12px_28px_-12px_rgba(30,94,235,0.85)] transition-[background-color,translate,scale,box-shadow] duration-700 ease-spring hover:-translate-y-1 hover:scale-[1.05] hover:bg-[#164bc2] hover:shadow-[0_20px_36px_-14px_rgba(30,94,235,0.9)] active:scale-[0.94] active:duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1e5eeb]"
             >
-              Tell us your idea
+              <span key={pop} className={`inline-flex items-center gap-2.5 px-6 py-3.5 ${pop > 0 ? "animate-rubber" : ""}`}>
+                Tell us your idea
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20 transition-[translate,scale] duration-700 ease-spring group-hover:translate-x-1.5 group-hover:scale-110">
+                  <ArrowRight size={14} />
+                </span>
+              </span>
             </NavLink>
             <NavLink
               href="/built-on"
               className="text-[15px] font-semibold text-[#0b1a3b] underline decoration-[#1e5eeb]/40 decoration-2 underline-offset-[6px] transition-colors hover:decoration-[#1e5eeb]"
             >
-              See our Work
+              See our work
             </NavLink>
           </div>
-          <p className="mt-8 text-sm text-slate-600">No obligation, just a conversation.</p>
+
+          <p {...enter(340)} className={`${enter(340).className} mt-8 text-sm text-slate-600`}>
+            No obligation, just a conversation.
+          </p>
         </div>
 
-        {/* idea → website canvas */}
-        <div className={`lg:col-span-7 ${enter}`} style={{ transitionDelay: "120ms" }}>
+        {/* ---------- idea → website canvas ---------- */}
+        <div {...enter(180)} className={`${enter(180).className} min-w-0 lg:col-span-7`}>
           <div className="mb-3 flex items-end justify-between px-1">
             <span className={`${hand.className} text-2xl leading-none text-[#1e5eeb]`}>the idea</span>
             <span className="text-sm font-medium text-[#0b1a3b]">the brand we built</span>
@@ -425,6 +561,7 @@ export default function Hero() {
             <div className="pointer-events-none absolute inset-y-0" style={{ left: `${pos}%` }}>
               <div className="absolute inset-y-0 w-[2px] -translate-x-1/2 bg-white shadow-[0_0_0_1px_rgba(30,94,235,0.35),0_0_18px_rgba(11,26,59,0.35)]" />
               <div
+                ref={handleRef}
                 role="slider"
                 tabIndex={0}
                 aria-label="Compare the first sketch with the finished website"
@@ -432,14 +569,14 @@ export default function Hero() {
                 aria-valuemax={100}
                 aria-valuenow={Math.round(pos)}
                 onKeyDown={onKeyDown}
-                className="pointer-events-auto absolute left-0 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1e5eeb] shadow-[0_6px_20px_-6px_rgba(11,26,59,0.5)] ring-1 ring-[#1e5eeb]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1e5eeb]"
+                className="pointer-events-auto absolute left-0 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1e5eeb] shadow-[0_6px_20px_-6px_rgba(11,26,59,0.5)] ring-1 ring-[#1e5eeb]/25 transition-[scale] duration-500 ease-spring hover:scale-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1e5eeb]"
               >
                 <ChevronLeft size={14} />
                 <ChevronRight size={14} />
               </div>
               <span
-                className={`${hand.className} absolute left-4 top-[calc(50%+26px)] whitespace-nowrap rounded bg-white/85 px-1.5 text-xl text-[#1e5eeb] transition-opacity duration-500 ${
-                  hint ? "opacity-100" : "opacity-0"
+                className={`${hand.className} absolute left-4 top-[calc(50%+26px)] whitespace-nowrap rounded bg-white/85 px-1.5 text-lg text-[#1e5eeb] transition-opacity duration-500 sm:text-xl ${
+                  hint && swept ? "opacity-100" : "opacity-0"
                 }`}
                 style={{ transform: "rotate(-6deg)" }}
               >
@@ -448,16 +585,41 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-1 rounded-full bg-white/70 p-1 shadow-[0_4px_14px_-8px_rgba(11,26,59,0.3)] ring-1 ring-[#0b1a3b]/5" role="group" aria-label="Choose a brand">
+          {/* brand tabs with sliding pill + auto-advance progress */}
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div
+              role="group"
+              aria-label="Choose a brand"
+              className="relative flex w-fit items-center gap-1 rounded-full bg-white/70 p-1 shadow-[0_4px_14px_-8px_rgba(11,26,59,0.3)] ring-1 ring-[#0b1a3b]/5 backdrop-blur"
+            >
+              {tab && (
+                <span
+                  aria-hidden
+                  className="absolute inset-y-1 left-0 overflow-hidden rounded-full bg-[#0b1a3b] shadow-[0_6px_14px_-8px_rgba(11,26,59,0.8)]"
+                  style={{
+                    width: tab.w,
+                    transform: `translateX(${tab.x}px)`,
+                    transition: tabAnim ? `transform 0.55s ${SPRING}, width 0.55s ${SPRING}` : "none",
+                  }}
+                >
+                  {auto && (
+                    <span className="absolute inset-x-3 bottom-1 h-[2px] overflow-hidden rounded-full bg-white/15">
+                      <span ref={barRef} className="absolute inset-y-0 left-0 w-0 rounded-full bg-[#7cc4f5]" />
+                    </span>
+                  )}
+                </span>
+              )}
               {demos.map((d, i) => (
                 <button
                   key={d.name}
+                  ref={(el) => {
+                    tabRefs.current[i] = el;
+                  }}
                   type="button"
                   aria-pressed={active === i}
                   onClick={() => choose(i)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                    active === i ? "bg-[#0b1a3b] text-white shadow-sm" : "text-slate-600 hover:text-[#0b1a3b]"
+                  className={`relative z-10 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-300 ${
+                    active === i ? "text-white" : "text-slate-600 hover:text-[#0b1a3b]"
                   }`}
                 >
                   {d.name}
