@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
-import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
+import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED, SITE_NAME } from "@/lib/site";
+
+const TITLE = "Privacy Policy";
+const DESCRIPTION = "How SKAD Commerce OS collects, uses and protects your personal information.";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "How SKAD CommerceOS collects, uses and protects your personal information.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/privacy" },
+  openGraph: { type: "website", url: "/privacy", siteName: SITE_NAME, title: `${TITLE} | ${SITE_NAME}`, description: DESCRIPTION },
 };
 
 const highlights: Highlight[] = [
@@ -24,9 +28,9 @@ const sections: LegalSection[] = [
     icon: "company",
     body: (
       <p>
-        This website is run by <strong>SkadCommerceOS</strong> (“SKAD CommerceOS”, “we”, “us”), a commerce services team
-        that helps businesses around the world build, launch and grow online. We’re responsible for the personal
-        information collected through this site.
+        This website is run by <strong>SKAD Commerce OS</strong> (“we”, “us”), a commerce services team that helps
+        businesses around the world build, launch and grow online. We’re responsible for the personal information
+        collected through this site.
       </p>
     ),
   },
@@ -138,7 +142,7 @@ export default function PrivacyPage() {
     <>
       <Header />
       <LegalPage
-        title="Privacy Policy"
+        title={TITLE}
         updated={UPDATED}
         email={EMAIL}
         heroIcon="shield"

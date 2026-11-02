@@ -2,12 +2,22 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
-import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
+import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED, SITE_NAME } from "@/lib/site";
+
+const TITLE = "Accessibility";
+const DESCRIPTION = "How we make the SKAD Commerce OS website easy for everyone to use.";
 
 export const metadata: Metadata = {
-  title: "Accessibility",
-  description: "How we make the SKAD CommerceOS website easy for everyone to use.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/accessibility" },
+  openGraph: {
+    type: "website",
+    url: "/accessibility",
+    siteName: SITE_NAME,
+    title: `${TITLE} | ${SITE_NAME}`,
+    description: DESCRIPTION,
+  },
 };
 
 const highlights: Highlight[] = [
@@ -24,8 +34,9 @@ const sections: LegalSection[] = [
     icon: "access",
     body: (
       <p>
-        We want everyone to be able to use our website easily, whatever device, setting or ability. We follow the widely
-        used Web Content Accessibility Guidelines (WCAG 2.1, level AA) as our guide, and keep improving as we go.
+        We want everyone to be able to use the SKAD Commerce OS website easily, whatever device, setting or ability. We
+        follow the widely used Web Content Accessibility Guidelines (WCAG 2.1, level AA) as our guide, and keep improving
+        as we go.
       </p>
     ),
   },
@@ -79,7 +90,7 @@ export default function AccessibilityPage() {
     <>
       <Header />
       <LegalPage
-        title="Accessibility"
+        title={TITLE}
         updated={UPDATED}
         email={EMAIL}
         heroIcon="access"

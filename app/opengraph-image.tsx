@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "SKAD CommerceOS: you bring the idea, we build the brand, the store and the sales.";
+export const alt = "SKAD Commerce OS: you bring the idea, we build the brand, the store and the sales.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -21,7 +21,7 @@ export default function OpengraphImage() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ display: "flex", width: 20, height: 20, borderRadius: 999, background: "#2ba6f0" }} />
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>SKAD CommerceOS</div>
+          <div style={{ display: "flex", fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>SKAD Commerce OS</div>
         </div>
         <div style={{ display: "flex", fontSize: 68, fontWeight: 700, lineHeight: 1.08, maxWidth: 980 }}>
           You bring the idea. We build the brand, the store and the sales.

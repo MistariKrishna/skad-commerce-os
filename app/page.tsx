@@ -1,5 +1,13 @@
 import HomePage from "@/components/HomePage";
-import { SITE_DESCRIPTION, SITE_EMAIL, SITE_NAME, SITE_URL } from "@/lib/site";
+import {
+  LOGO_URL,
+  PARENT_NAME,
+  PARENT_URL,
+  SITE_DESCRIPTION,
+  SITE_EMAIL,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/site";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -8,18 +16,18 @@ const jsonLd = {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
       name: SITE_NAME,
-      alternateName: ["SKAD Commerce OS", "CommerceOS", "SKAD Commerce"],
       url: SITE_URL,
-      logo: `/images/logo/favicon.ico`,
+      logo: { "@type": "ImageObject", url: LOGO_URL },
       email: SITE_EMAIL,
       description: SITE_DESCRIPTION,
-      // sameAs: ["https://www.linkedin.com/company/…", "https://www.instagram.com/…"],
+      parentOrganization: { "@type": "Organization", name: PARENT_NAME, url: PARENT_URL },
     },
     {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       name: SITE_NAME,
       url: SITE_URL,
+      inLanguage: "en",
       publisher: { "@id": `${SITE_URL}/#organization` },
     },
   ],
@@ -28,7 +36,10 @@ const jsonLd = {
 export default function Home() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
       <HomePage />
     </>
   );

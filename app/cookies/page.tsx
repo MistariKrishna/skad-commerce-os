@@ -2,12 +2,22 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
-import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
+import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED, SITE_NAME } from "@/lib/site";
+
+const TITLE = "Cookies";
+const DESCRIPTION = "How the SKAD Commerce OS website uses cookies and browser storage.";
 
 export const metadata: Metadata = {
-  title: "Cookies",
-  description: "How the SKAD CommerceOS website uses cookies and browser storage.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/cookies" },
+  openGraph: {
+    type: "website",
+    url: "/cookies",
+    siteName: SITE_NAME,
+    title: `${TITLE} | ${SITE_NAME}`,
+    description: DESCRIPTION,
+  },
 };
 
 const highlights: Highlight[] = [
@@ -36,9 +46,9 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Our website doesn’t set any tracking or advertising cookies. The only thing we keep is a small amount of
-          temporary browser storage, used to carry your choices from one part of the page to another, for example the
-          services you tick before sending an enquiry.
+          The SKAD Commerce OS website doesn’t set any tracking or advertising cookies. The only thing we keep is a small
+          amount of temporary browser storage, used to carry your choices from one part of the page to another, for
+          example the services you tick before sending an enquiry.
         </p>
         <ul>
           <li>it stays in your browser and isn’t shared with us until you send the form</li>
@@ -88,7 +98,7 @@ export default function CookiesPage() {
     <>
       <Header />
       <LegalPage
-        title="Cookies"
+        title={TITLE}
         updated={UPDATED}
         email={EMAIL}
         heroIcon="cookie"

@@ -17,12 +17,12 @@ export default function Logo({ variant = "default", className = "h-10" }: LogoPr
   return (
     <NavLink
       href="/"
-      aria-label="SKAD CommerceOS home"
+      aria-label="SKAD Commerce OS home"
       className="flex shrink-0 items-center transition-opacity duration-300 hover:opacity-85"
     >
       <Image
         src={sources[variant]}
-        alt="SKAD CommerceOS"
+        alt="SKAD Commerce OS"
         width={146}
         height={40}
         unoptimized

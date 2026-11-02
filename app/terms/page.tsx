@@ -3,12 +3,22 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
-import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
+import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED, SITE_NAME } from "@/lib/site";
+
+const TITLE = "Terms of Use";
+const DESCRIPTION = "Simple guidelines for using the SKAD Commerce OS website.";
 
 export const metadata: Metadata = {
-  title: "Terms of Use",
-  description: "Simple guidelines for using the SKAD CommerceOS website.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/terms" },
+  openGraph: {
+    type: "website",
+    url: "/terms",
+    siteName: SITE_NAME,
+    title: `${TITLE} | ${SITE_NAME}`,
+    description: DESCRIPTION,
+  },
 };
 
 const highlights: Highlight[] = [
@@ -25,7 +35,7 @@ const sections: LegalSection[] = [
     icon: "company",
     body: (
       <p>
-        This website is run by <strong>SkadCommerceOS</strong>. These are simple guidelines for using it. If you work
+        This website is run by <strong>SKAD Commerce OS</strong>. These are simple guidelines for using it. If you work
         with us on a project, we’ll agree the details of that work together separately.
       </p>
     ),
@@ -104,7 +114,7 @@ export default function TermsPage() {
     <>
       <Header />
       <LegalPage
-        title="Terms of Use"
+        title={TITLE}
         updated={UPDATED}
         email={EMAIL}
         heroIcon="scale"

@@ -1,54 +1,20 @@
-
-import type { Metadata } from "next";
-import {
-  Funnel_Display,
-  Funnel_Sans,
-  Martian_Mono,
-} from "next/font/google";
-
+import type { Metadata, Viewport } from "next";
+import { Funnel_Display, Funnel_Sans, Martian_Mono } from "next/font/google";
 import "./globals.css";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_SHARE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
 
-const SITE_URL = "https://skadcommerce.com";
-
-const display = Funnel_Display({
-  subsets: ["latin"],
-  variable: "--font-funnel-display",
-  display: "swap",
-});
-
-const body = Funnel_Sans({
-  subsets: ["latin"],
-  variable: "--font-funnel-sans",
-  display: "swap",
-});
-
-const mono = Martian_Mono({
-  subsets: ["latin"],
-  variable: "--font-martian",
-  display: "swap",
-});
+const display = Funnel_Display({ subsets: ["latin"], variable: "--font-funnel-display", display: "swap" });
+const body = Funnel_Sans({ subsets: ["latin"], variable: "--font-funnel-sans", display: "swap" });
+const mono = Martian_Mono({ subsets: ["latin"], variable: "--font-martian", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  title: { default: SITE_TITLE, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
 
-  applicationName: "SKAD Commerce OS",
-
-  title: {
-    default: "SKAD Commerce OS | Commerce, Built to Grow",
-    template: "%s | SKAD Commerce OS",
-  },
-
-  description:
-    "SKAD Commerce OS is a commerce services platform helping founders, D2C brands and traditional businesses build, launch, manage and grow their businesses.",
-
-  alternates: {
-    canonical: "/",
-  },
-
-  icons: {
-    icon: "/images/logo/favicon.ico",
-    apple: "/images/logo/apple-icon.png",
-  },
+  // favicon + apple icon come from app/icon.ico and app/apple-icon.png automatically
 
   robots: {
     index: true,
@@ -62,66 +28,36 @@ export const metadata: Metadata = {
     },
   },
 
+  // og:image comes from app/opengraph-image.tsx automatically (1200 × 630)
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: SITE_URL,
-    siteName: "SKAD Commerce OS",
-    title: "SKAD Commerce OS | Commerce, Built to Grow",
-    description:
-      "Build, launch, manage and grow your business with SKAD Commerce OS. Commerce services and solutions for founders, D2C brands and traditional businesses.",
+    url: "/",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_SHARE_DESCRIPTION,
   },
 
   twitter: {
-    card: "summary",
-    title: "SKAD Commerce OS | Commerce, Built to Grow",
-    description:
-      "A commerce services platform helping businesses build, launch and grow.",
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_SHARE_DESCRIPTION,
+    images: ["/opengraph-image"],
   },
+
+  formatDetection: { telephone: false },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0b1a3b",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${display.variable} ${body.variable} ${mono.variable}`}
-    >
-      <body className="bg-canvas font-sans text-ink antialiased">
-  <script
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{
-      __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://skadcommerce.com/#organization",
-            name: "SKAD Commerce OS",
-            url: "https://skadcommerce.com",
-            parentOrganization: {
-              "@type": "Organization",
-              name: "SKAD GROUP",
-            },
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://skadcommerce.com/#website",
-            name: "SKAD Commerce OS",
-            url: "https://skadcommerce.com",
-            publisher: {
-              "@id": "https://skadcommerce.com/#organization",
-            },
-          },
-        ],
-      }),
-    }}
-  />
-  {children}
-</body>
+    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+      <body className="bg-canvas font-sans text-ink antialiased">{children}</body>
     </html>
   );
 }

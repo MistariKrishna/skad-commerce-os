@@ -193,7 +193,7 @@ export default function Footer() {
       {/* ================= bottom bar ================= */}
       <div className="border-t border-white/10">
         <div className="wrap flex flex-col gap-5 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[13px] text-white/50">© 2026 SKAD CommerceOS</p>
+          <p className="text-[13px] text-white/50">© 2026 SKAD Commerce OS</p>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             {legal.map(([label, href]) => (

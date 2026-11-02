@@ -123,7 +123,7 @@ export default function HeroMobile() {
           You bring the idea. We build the brand, the store and the sales.
         </h1>
         <p {...enter(100)} className={`${enter(100).className} mt-5 text-[16px] leading-relaxed text-slate-600 sm:text-[17px]`}>
-          SKAD CommerceOS is a commerce services team. One team takes your business from first sketch to steady
+        SKAD Commerce OS is a commerce services team. One team takes your business from first sketch to steady
           orders.
         </p>
 

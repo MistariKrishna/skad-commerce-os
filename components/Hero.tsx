@@ -510,7 +510,7 @@ export default function Hero() {
             You bring the idea. We build the brand, the store and the sales.
           </h1>
           <p {...enter(120)} className={`${enter(120).className} mt-6 max-w-md text-[17px] leading-relaxed text-slate-600`}>
-            SKAD CommerceOS is a commerce services team. We’ve taken brands from first sketch to a running business,
+           SKAD Commerce OS  is a commerce services team. We’ve taken brands from first sketch to a running business,
             for founders, D2C brands and traditional businesses.
           </p>
 
@@ -632,7 +632,7 @@ export default function Hero() {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-slate-600">Live websites made by SKAD CommerceOS teams.</p>
+            <p className="text-xs text-slate-600">Live websites made by SKAD Commerce OS teams.</p>
           </div>
         </div>
       </div>
