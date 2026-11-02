@@ -10,6 +10,7 @@ import Method from "./Method";
 import BuiltOn from "./BuiltOn";
 import Solutions from "./Solutions";
 import WaysToWork from "./WaysToWork";
+import JourneyMobile from "./mobile/JourneyMobile";
 import Enquire from "./Enquire";
 import Footer from "./Footer";
 import SectionScroll from "./SectionScroll";
@@ -27,7 +28,7 @@ export default function HomePage({ path = "/" }: { path?: string }) {
       <main>
        <div className="hidden lg:block"><Hero /></div><div className="lg:hidden"><HeroMobile /></div>
         <BrandStrip />
-        <Journey />
+        <div className="hidden lg:block"><Journey /></div><div className="lg:hidden"><JourneyMobile /></div>
        <div className="hidden lg:block"><Problem /></div><div className="lg:hidden"><ProblemMobile /></div>
         <div className="hidden lg:block"><Platform /></div><div className="lg:hidden"><PlatformMobile /></div>
         <div className="hidden lg:block"><Connects /></div><div className="lg:hidden"><ConnectsMobile /></div>
