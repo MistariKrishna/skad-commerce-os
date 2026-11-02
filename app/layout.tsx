@@ -91,8 +91,37 @@ export default function RootLayout({
       className={`${display.variable} ${body.variable} ${mono.variable}`}
     >
       <body className="bg-canvas font-sans text-ink antialiased">
-        {children}
-      </body>
+  <script
+    type="application/ld+json"
+    dangerouslySetInnerHTML={{
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://skadcommerce.com/#organization",
+            name: "SKAD Commerce OS",
+            url: "https://skadcommerce.com",
+            parentOrganization: {
+              "@type": "Organization",
+              name: "SKAD GROUP",
+            },
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://skadcommerce.com/#website",
+            name: "SKAD Commerce OS",
+            url: "https://skadcommerce.com",
+            publisher: {
+              "@id": "https://skadcommerce.com/#organization",
+            },
+          },
+        ],
+      }),
+    }}
+  />
+  {children}
+</body>
     </html>
   );
 }
