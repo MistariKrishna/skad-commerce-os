@@ -203,15 +203,16 @@ export default function Footer() {
             ))}
           </div>
 
-          <NavLink
-            href="/"
-            className="group inline-flex w-fit items-center gap-2 rounded-full bg-white/10 py-2 pl-4 pr-2 text-[13px] font-semibold text-white ring-1 ring-white/10 transition-[background-color,translate,scale] duration-700 ease-spring hover:-translate-y-1 hover:scale-[1.05] hover:bg-white/15 active:scale-95 active:duration-100"
-          >
-            Back to top
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-white text-[#0b1a3b] transition-[translate] duration-700 ease-spring group-hover:-translate-y-0.5">
-              <ArrowUp size={13} />
-            </span>
-          </NavLink>
+          <button
+  type="button"
+  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+  className="group inline-flex w-fit items-center gap-2 rounded-full bg-white/10 py-2 pl-4 pr-2 text-[13px] font-semibold text-white ring-1 ring-white/10 transition-[background-color,translate,scale] duration-700 ease-spring hover:-translate-y-1 hover:scale-[1.05] hover:bg-white/15 active:scale-95 active:duration-100"
+>
+  Back to top
+  <span className="grid h-6 w-6 place-items-center rounded-full bg-white text-[#0b1a3b] transition-[translate] duration-700 ease-spring group-hover:-translate-y-0.5">
+    <ArrowUp size={13} />
+  </span>
+</button>
         </div>
       </div>
     </footer>

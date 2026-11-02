@@ -18,6 +18,7 @@ export function scrollToPath(path: string, behavior: ScrollBehavior = "smooth"):
   const id = ROUTES[path];
   if (!id) return false;
   if (id === "top") {
+    if (!document.getElementById("top") && !document.getElementById("top-m")) return false;
     window.scrollTo({ top: 0, behavior });
     return true;
   }
