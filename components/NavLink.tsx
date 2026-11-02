@@ -21,7 +21,12 @@ export function scrollToPath(path: string, behavior: ScrollBehavior = "smooth"):
     window.scrollTo({ top: 0, behavior });
     return true;
   }
-  const el = document.getElementById(id);
+  let el = document.getElementById(id);
+  // if the desktop section is hidden (phones/tablets), use its mobile version
+  if (!el || el.offsetParent === null) {
+    const alt = document.getElementById(`${id}-m`);
+    if (alt && alt.offsetParent !== null) el = alt;
+  }
   if (!el) return false;
   el.scrollIntoView({ behavior, block: "start" });
   return true;

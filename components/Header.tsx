@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Logo from "./Logo";
 import NavLink from "./NavLink";
 
@@ -104,7 +104,7 @@ export default function Header() {
         />
 
         <div className="relative flex h-16 items-center justify-between gap-4 pl-4 pr-2.5 sm:pl-5">
-          <Logo />
+          <Logo className="h-8 sm:h-9 lg:h-10" />
 
           <nav className="relative hidden items-center gap-0.5 lg:flex" aria-label="Primary" onMouseLeave={handleLeave}>
             <span
@@ -176,16 +176,20 @@ export default function Header() {
               aria-label={open ? "Close menu" : "Open menu"}
               className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-800 transition-[transform,background-color] duration-[420ms] ease-spring hover:scale-110 hover:bg-white active:scale-90 active:duration-100 lg:hidden"
             >
-              <span className="relative h-5 w-5">
-                <Menu
-                  size={20}
-                  className={`absolute inset-0 transition-all duration-300 ease-bounce-out ${open ? "rotate-90 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
-                />
-                <X
-                  size={20}
-                  className={`absolute inset-0 transition-all duration-300 ease-bounce-out ${open ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-50 opacity-0"}`}
-                />
-              </span>
+             <span className="relative block h-4 w-5" aria-hidden>
+  <span
+    className="absolute left-0 top-0 h-[2px] w-5 rounded-full bg-current transition-[translate,rotate] duration-500 ease-spring"
+    style={{ translate: open ? "0 7px" : "0 0", rotate: open ? "45deg" : "0deg" }}
+  />
+  <span
+    className="absolute left-0 top-[7px] h-[2px] rounded-full bg-current transition-[width,opacity] duration-300 ease-out"
+    style={{ width: open ? "0px" : "14px", opacity: open ? 0 : 1 }}
+  />
+  <span
+    className="absolute left-0 top-[14px] h-[2px] w-5 rounded-full bg-current transition-[translate,rotate] duration-500 ease-spring"
+    style={{ translate: open ? "0 -7px" : "0 0", rotate: open ? "-45deg" : "0deg" }}
+  />
+</span>
             </button>
           </div>
         </div>

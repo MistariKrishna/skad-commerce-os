@@ -37,7 +37,7 @@ type Shape = {
 
 type NoteDef = { x: number; y: number; text: string; rot?: number };
 
-type Demo = {
+export type Demo = {
   name: string;
   idea: string;
   ideaAt: { x: number; y: number };
@@ -46,7 +46,7 @@ type Demo = {
   notes: NoteDef[];
 };
 
-const demos: Demo[] = [
+export const demos: Demo[] = [
   {
     name: "Detara",
     idea: "Fine diamonds people can trust online",
@@ -137,7 +137,7 @@ const demos: Demo[] = [
 
 /* ---------------- finished site ---------------- */
 
-function SiteLayer({ d, visible, priority }: { d: Demo; visible: boolean; priority: boolean }) {
+export function SiteLayer({ d, visible, priority }: { d: Demo; visible: boolean; priority: boolean }) {
   return (
     <div
       aria-hidden={!visible}
@@ -230,7 +230,7 @@ function ShapeEl({ s }: { s: Shape }) {
   );
 }
 
-function SketchLayer({ d }: { d: Demo }) {
+export function SketchLayer({ d }: { d: Demo }) {
   return (
     <div
       className="absolute inset-0"
