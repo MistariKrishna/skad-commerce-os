@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Funnel_Display, Funnel_Sans, Martian_Mono } from "next/font/google";
 import "./globals.css";
-
+import { SITE_URL } from "@/lib/site";
 const display = Funnel_Display({ subsets: ["latin"], variable: "--font-funnel-display", display: "swap" });
 const body = Funnel_Sans({ subsets: ["latin"], variable: "--font-funnel-sans", display: "swap" });
 const mono = Martian_Mono({ subsets: ["latin"], variable: "--font-martian", display: "swap" });
@@ -14,6 +14,7 @@ export const metadata: Metadata = {
     icon: "/images/logo/favicon.ico",
     apple: "/images/logo/apple-icon.png",
   },
+  metadataBase: new URL(SITE_URL),
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

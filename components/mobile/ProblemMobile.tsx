@@ -43,7 +43,10 @@ function Contrast({ problem, fix }: { problem: string; fix: string }) {
           {problem}
         </span>
       </p>
-      <div className={`grid transition-[grid-template-rows] duration-500 ${seen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`} style={{ transitionDelay: "500ms" }}>
+      <div
+        className={`grid transition-[grid-template-rows] duration-500 ${seen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+        style={{ transitionDelay: "500ms" }}
+      >
         <div className="overflow-hidden">
           <p
             className="mt-3 flex items-start gap-2.5 text-[16px] font-semibold leading-snug text-[#0b1a3b]"
@@ -61,8 +64,9 @@ function Contrast({ problem, fix }: { problem: string; fix: string }) {
 }
 
 export default function ProblemMobile() {
-  const before = useSeen<HTMLDivElement>(0.2);
-  const after = useSeen<HTMLDivElement>(0.3);
+  // destructure so `seen` is plain state, not read off an object holding a ref
+  const { ref: beforeRef, seen: beforeSeen } = useSeen<HTMLDivElement>(0.2);
+  const { ref: afterRef, seen: afterSeen } = useSeen<HTMLDivElement>(0.3);
 
   return (
     <section id="problem-m" className="bg-white py-20">
@@ -73,7 +77,7 @@ export default function ProblemMobile() {
         />
 
         {/* before */}
-        <div ref={before.ref} className="mt-10 rounded-2xl bg-[#f4f8ff] p-5 ring-1 ring-[#0b1a3b]/6">
+        <div ref={beforeRef} className="mt-10 rounded-2xl bg-[#f4f8ff] p-5 ring-1 ring-[#0b1a3b]/6">
           <p className="text-sm font-semibold text-slate-500">Today: seven separate vendors</p>
           <ul className="mt-4 space-y-2.5">
             {vendors.map((v, i) => {
@@ -83,8 +87,8 @@ export default function ProblemMobile() {
                   key={v.from}
                   className="rounded-xl bg-white px-3.5 py-3 shadow-[0_6px_14px_-10px_rgba(11,26,59,0.35)] ring-1 ring-slate-200"
                   style={{
-                    opacity: before.seen ? 1 : 0,
-                    translate: before.seen ? "0 0" : `${i % 2 ? 18 : -18}px 0`,
+                    opacity: beforeSeen ? 1 : 0,
+                    translate: beforeSeen ? "0 0" : `${i % 2 ? 18 : -18}px 0`,
                     rotate: `${i % 2 ? 1.2 : -1.2}deg`,
                     transition: `opacity 0.5s ease ${i * 80}ms, translate 0.7s ${SPRING} ${i * 80}ms`,
                   }}
@@ -95,7 +99,9 @@ export default function ProblemMobile() {
                     </span>
                     <span className="text-[15px] font-medium text-slate-700">{v.from}</span>
                   </div>
-                  {v.gripe && <p className={`${hand.className} mt-1 pl-11 text-[18px] leading-snug text-slate-500`}>“{v.gripe}”</p>}
+                  {v.gripe && (
+                    <p className={`${hand.className} mt-1 pl-11 text-[18px] leading-snug text-slate-500`}>“{v.gripe}”</p>
+                  )}
                 </li>
               );
             })}
@@ -111,7 +117,7 @@ export default function ProblemMobile() {
         </div>
 
         {/* after */}
-        <div ref={after.ref} className="rounded-2xl bg-[#0b1a3b] p-5 text-white shadow-[0_30px_60px_-35px_rgba(11,26,59,0.8)]">
+        <div ref={afterRef} className="rounded-2xl bg-[#0b1a3b] p-5 text-white shadow-[0_30px_60px_-35px_rgba(11,26,59,0.8)]">
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/10 text-[13px] font-bold tracking-[0.1em]">
               SKAD
@@ -129,8 +135,8 @@ export default function ProblemMobile() {
                   key={v.to}
                   className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 ring-1 ring-white/10"
                   style={{
-                    opacity: after.seen ? 1 : 0,
-                    scale: after.seen ? "1" : "0.85",
+                    opacity: afterSeen ? 1 : 0,
+                    scale: afterSeen ? "1" : "0.85",
                     transition: `opacity 0.4s ease ${200 + i * 90}ms, scale 0.55s ${SPRING} ${200 + i * 90}ms`,
                   }}
                 >

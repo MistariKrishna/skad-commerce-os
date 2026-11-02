@@ -310,16 +310,20 @@ export default function Hero() {
   const [tab, setTab] = useState<Box | null>(null);
   const [tabAnim, setTabAnim] = useState(false);
 
-  /* the wipe */
+  /* the wipe: all state updates happen inside animation frames, never synchronously */
   const sweep = useCallback((delay: number) => {
     cancelAnimationFrame(anim.current);
-    setSwept(false);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const from = 100;
     const duration = 1500;
     const start = performance.now() + delay;
     const ease = (t: number) => 1 - Math.pow(1 - t, 4);
+    let first = true;
     const tick = (now: number) => {
+      if (first) {
+        first = false;
+        setSwept(false);
+      }
       if (reduce) {
         setPos(REST);
         setSwept(true);
@@ -377,6 +381,7 @@ export default function Hero() {
   useEffect(() => {
     if (!swept || !auto) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const bar = barRef.current; // captured once, used in cleanup
     let raf = 0;
     let last = performance.now();
     let acc = 0;
@@ -384,7 +389,8 @@ export default function Hero() {
       const dt = Math.min(now - last, 100);
       last = now;
       if (inView.current && !document.hidden && !dragging.current) acc += dt;
-      if (barRef.current) barRef.current.style.width = `${Math.min(100, (acc / HOLD_MS) * 100)}%`;
+      const b = barRef.current;
+      if (b) b.style.width = `${Math.min(100, (acc / HOLD_MS) * 100)}%`;
       if (acc >= HOLD_MS) {
         setActive((a) => (a + 1) % demos.length);
         setPos(100);
@@ -396,7 +402,7 @@ export default function Hero() {
     raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
-      if (barRef.current) barRef.current.style.width = "0%";
+      if (bar) bar.style.width = "0%";
     };
   }, [swept, auto, active, sweep]);
 

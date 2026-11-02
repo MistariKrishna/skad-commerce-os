@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2, Pin } from "lucide-react";
 import { capabilities } from "@/lib/data";
 import Reveal from "./Reveal";
 import { hand } from "@/lib/fonts";
-
+import { SITE_EMAIL } from "@/lib/site";
 const stageOptions = ["Idea", "Pre-launch", "Already selling", "Established, going digital"];
 const businessTypes = ["D2C brand", "Manufacturer / exporter", "Jeweller", "Service business", "Other"];
 const contactMethods = ["Email", "Phone", "WhatsApp"];
@@ -140,7 +140,8 @@ export default function Enquire() {
   const [showErrors, setShowErrors] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [pinKey, setPinKey] = useState(0);
-
+  const [sendError, setSendError] = useState("");
+  const [trap, setTrap] = useState("");
   /* ---------- handoffs from other sections ---------- */
   useEffect(() => {
     const applyBrief = (list: unknown) => {
@@ -213,7 +214,7 @@ export default function Enquire() {
     setStep((s) => Math.max(s - 1, 0));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (step < 3) {
       next();
       return;
@@ -223,8 +224,14 @@ export default function Enquire() {
       return;
     }
     setStatus("sending");
-    // TODO: replace with a real request, e.g. fetch("/api/enquire", { method: "POST", body: JSON.stringify(data) })
-    window.setTimeout(() => {
+    setSendError("");
+    try {
+      const res = await fetch("/api/enquire", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, page: window.location.pathname, trap }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
       setStatus("done");
       setPinKey((k) => k + 1);
       try {
@@ -234,7 +241,10 @@ export default function Enquire() {
       } catch {
         /* ignore */
       }
-    }, 1200);
+    } catch {
+      setStatus("idle");
+      setSendError(`We couldn’t send your brief. Please try again, or email us at ${SITE_EMAIL}.`);
+    }
   };
 
   const reset = () => {
@@ -355,9 +365,19 @@ export default function Enquire() {
                     noValidate
                     onSubmit={(e) => {
                       e.preventDefault();
-                      handleSubmit();
+                      void handleSubmit();
                     }}
                   >
+                    <input
+  type="text"
+  name="company_website"
+  value={trap}
+  onChange={(e) => setTrap(e.target.value)}
+  tabIndex={-1}
+  autoComplete="off"
+  aria-hidden="true"
+  className="absolute left-[-9999px] h-px w-px opacity-0"
+/>
                     <p className="text-sm font-medium text-[#1e5eeb] sm:hidden">
                       Step {step + 1} of 4: {stepTitles[step]}
                     </p>
@@ -499,7 +519,11 @@ export default function Enquire() {
                         </>
                       )}
                     </div>
-
+                          {sendError && (
+  <p role="alert" className="mt-6 rounded-xl bg-rose-50 px-4 py-3 text-[14px] leading-relaxed text-rose-700 ring-1 ring-rose-200">
+    {sendError}
+  </p>
+)}
                     <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row">
                       {step > 0 && (
                         <button

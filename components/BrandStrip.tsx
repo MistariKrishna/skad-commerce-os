@@ -1,29 +1,44 @@
-import { brands } from "@/lib/data";
+import Image from "next/image";
+
+// Adjust the file paths to match your logo files
+const logos = [
+  { name: "Detara", src: "/images/brands/logos/detara-logo.svg" },
+  { name: "Benavi", src: "/images/brands/logos/benavi-logo.svg" },
+  { name: "Luxora Glow", src: "/images/brands/logos/luxora-glow-logo.svg" },
+  { name: "Rupaari", src: "/images/brands/logos/rupaari-logo.svg" },
+  // { name: "Zemo", src: "/images/brands/logos/zemo-logo.svg" },
+  { name: "Case Suno", src: "/images/brands/logos/case-suno-logo.svg" },
+];
 
 export default function BrandStrip() {
-  const loop = [...brands, ...brands];
+  const loop = [...logos, ...logos];
+
   return (
     <section aria-label="Brands built on CommerceOS" className="border-b border-slate-200 bg-white">
-      <div className="wrap flex flex-col items-start gap-4 py-7 md:flex-row md:items-center md:gap-10">
-        <p className="shrink-0 font-mono text-[10px] uppercase leading-relaxed tracking-[0.12em] text-slate-500">
-          Infrastructure behind
-          <br />
-          SKAD’s own brands
+      <div className="wrap flex flex-col items-start gap-5 py-8 md:flex-row md:items-center md:gap-12">
+        <p className="shrink-0 text-[13px] font-semibold leading-snug text-slate-500">
+          Brands built on
+          <br className="hidden md:block" /> CommerceOS
         </p>
+
         <div
           className="group relative w-full overflow-hidden"
           style={{ maskImage: "linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)" }}
         >
-          <div className="flex w-max animate-marquee group-hover:[animation-play-state:paused]">
-            {loop.map((b, i) => (
-              <span
-                key={`${b}-${i}`}
-                className="px-10 text-sm font-semibold tracking-[0.18em] text-slate-500 transition-colors duration-300 hover:text-ink"
-              >
-                {b}
-              </span>
+          <ul className="flex w-max animate-marquee items-center group-hover:[animation-play-state:paused]">
+            {loop.map((l, i) => (
+              <li key={`${l.name}-${i}`} className="px-8 sm:px-10" aria-hidden={i >= logos.length}>
+                <Image
+                  src={l.src}
+                  alt={i < logos.length ? l.name : ""}
+                  width={160}
+                  height={48}
+                  unoptimized
+                  className="h-8 w-auto object-contain opacity-55 brightness-0 transition-[opacity,translate] duration-300 hover:-translate-y-0.5 hover:opacity-90 sm:h-9"
+                />
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     </section>

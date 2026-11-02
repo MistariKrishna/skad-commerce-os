@@ -3,8 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
 
-const EMAIL = "skadcommerceos@gmail.com";
-const UPDATED = "2 November 2026";
+import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | SKAD CommerceOS",

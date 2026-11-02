@@ -7,12 +7,11 @@ import Logo from "./Logo";
 import NavLink from "./NavLink";
 
 const links = [
-  { label: "Platform", href: "/platform" },
+  { label: "Services", href: "/platform" },
   { label: "Solutions", href: "/solutions" },
-  { label: "Industries", href: "/industries" },
   { label: "How it works", href: "/how-it-works" },
-  { label: "Built on CommerceOS", href: "/built-on" },
-  { label: "Insights", href: "/method" },
+  { label: "Our work", href: "/built-on" },
+  { label: "Our method", href: "/method" },
 ];
 
 type Pos = { left: number; width: number };

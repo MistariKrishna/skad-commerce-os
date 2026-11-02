@@ -16,8 +16,8 @@ export default function Reveal({ children, className = "", delay = 0 }: RevealPr
     const el = ref.current;
     if (!el) return;
     if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-      return;
+      const r = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(r);
     }
     const observer = new IntersectionObserver(
       (entries) => {
@@ -37,7 +37,7 @@ export default function Reveal({ children, className = "", delay = 0 }: RevealPr
       ref={ref}
       data-visible={visible}
       style={{ transitionDelay: `${delay}ms` }}
-      className={`transition-[opacity,transform] duration-[900ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] ${
+      className={`transition-[opacity,transform,translate,scale] duration-[900ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] ${
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
       } ${className}`}
     >
