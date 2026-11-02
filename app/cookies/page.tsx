@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
-
 import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Cookies | SKAD CommerceOS",
+  title: "Cookies",
   description: "How the SKAD CommerceOS website uses cookies and browser storage.",
+  alternates: { canonical: "/cookies" },
 };
 
 const highlights: Highlight[] = [

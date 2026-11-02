@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
-
 import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Accessibility | SKAD CommerceOS",
+  title: "Accessibility",
   description: "How we make the SKAD CommerceOS website easy for everyone to use.",
+  alternates: { canonical: "/accessibility" },
 };
 
 const highlights: Highlight[] = [
@@ -85,7 +85,12 @@ export default function AccessibilityPage() {
         heroIcon="access"
         heroChips={["Keyboard friendly", "Reduced motion", "Phone ready"]}
         highlights={highlights}
-        intro={<p>We want our website to work well for everyone. Here’s what we’ve done, and how to tell us if something gets in your way.</p>}
+        intro={
+          <p>
+            We want our website to work well for everyone. Here’s what we’ve done, and how to tell us if something gets in
+            your way.
+          </p>
+        }
         sections={sections}
       />
       <Footer />

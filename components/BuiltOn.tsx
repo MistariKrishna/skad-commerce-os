@@ -218,11 +218,15 @@ export default function BuiltOn() {
     setMHint(false);
   };
 
-  useEffect(() => {
+   useEffect(() => {
     const id = window.setInterval(() => {
       if (window.matchMedia("(min-width: 1024px)").matches) return;
       if (!inViewRef.current || Date.now() < touchedUntil.current) return;
-      goTo((mActiveRef.current + 1) % n);
+      const el = scrollerRef.current;
+      if (!el) return;
+      const card = el.querySelector<HTMLElement>("[data-card]");
+      const step = card ? card.offsetWidth + M_GAP : 1;
+      el.scrollTo({ left: ((mActiveRef.current + 1) % n) * step, behavior: "smooth" });
     }, DURATION);
     return () => window.clearInterval(id);
   }, []);

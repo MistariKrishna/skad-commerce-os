@@ -3,12 +3,12 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LegalPage, { type Highlight, type LegalSection } from "@/components/legal/LegalPage";
-
 import { SITE_EMAIL as EMAIL, LEGAL_UPDATED as UPDATED } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Terms of Use | SKAD CommerceOS",
+  title: "Terms of Use",
   description: "Simple guidelines for using the SKAD CommerceOS website.",
+  alternates: { canonical: "/terms" },
 };
 
 const highlights: Highlight[] = [

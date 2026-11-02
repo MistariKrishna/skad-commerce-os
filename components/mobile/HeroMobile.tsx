@@ -5,7 +5,6 @@ import { ArrowRight, Check, MessageCircle, Search, ShoppingBag } from "lucide-re
 import NavLink from "../NavLink";
 import { hand } from "@/lib/fonts";
 
-const BLUE = "#1e5eeb";
 const NAVY = "#0b1a3b";
 const SPRING = "cubic-bezier(0.34,1.4,0.64,1)";
 const STEP_MS = 1600;
