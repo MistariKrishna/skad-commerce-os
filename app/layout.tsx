@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   title: "SKAD CommerceOS — Build, Launch, Grow",
   description:
     "SKAD CommerceOS is a commerce services team that builds, launches and grows brands for founders, D2C brands and traditional businesses.",
+  icons: {
+    icon: "/images/logo/favicon.ico",
+    apple: "/images/logo/apple-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
