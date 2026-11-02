@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import NavLink from "./NavLink";
 import Reveal from "./Reveal";
 import { hand } from "@/lib/fonts";
-import { ArrowRight } from "lucide-react";
+
 const BLUE = "#1e5eeb";
 const SKY = "#2ba6f0";
 const DROP = "cubic-bezier(0.34,1.35,0.64,1)";
@@ -137,6 +138,7 @@ export default function Connects() {
   const [visible, setVisible] = useState(false);
   const [phase, setPhase] = useState(0);
   const [pop, setPop] = useState(0);
+
   // only animate while on screen
   useEffect(() => {
     const el = sectionRef.current;
@@ -257,7 +259,21 @@ export default function Connects() {
                 backgroundSize: "24px 24px",
               }}
             >
-              <div className="absolute inset-0 origin-center scale-[0.72] sm:scale-100">
+              {/* note: sits inside the card so it can never be cut off */}
+              <span
+                className={`${hand.className} absolute left-7 top-7 z-10 max-w-[200px] text-[22px] leading-tight`}
+                style={{
+                  color: BLUE,
+                  opacity: connected ? 1 : 0,
+                  transform: `rotate(-3deg) translateY(${connected ? 0 : 8}px)`,
+                  transition: `opacity 0.5s ease ${connected ? 900 : 0}ms, transform 0.6s ${DROP} ${connected ? 900 : 0}ms`,
+                }}
+              >
+                what we learn flows back down to the start
+              </span>
+
+              {/* slightly smaller on 1024–1279px screens so labels never clip */}
+              <div className="absolute inset-0 origin-center scale-[0.84] xl:scale-100">
                 {/* ground shadow */}
                 <div
                   aria-hidden
@@ -354,9 +370,9 @@ export default function Connects() {
                   return (
                     <div
                       key={s.name}
-                      className="absolute hidden items-center gap-3 sm:flex"
+                      className="absolute flex items-center gap-3 whitespace-nowrap"
                       style={{
-                        left: "calc(50% + 168px)",
+                        left: "calc(50% + 160px)",
                         top: CENTER_Y - gap * i * TILT - 12,
                         opacity: show ? 1 : 0,
                         transform: `translateX(${show ? 0 : 12}px)`,
@@ -381,27 +397,12 @@ export default function Connects() {
                     </div>
                   );
                 })}
-
-                {/* note */}
-                <span
-                  className={`${hand.className} absolute whitespace-nowrap text-[22px] leading-none`}
-                  style={{
-                    right: "calc(50% + 150px)",
-                    top: CENTER_Y - 2 * SPREAD * TILT - 10,
-                    color: BLUE,
-                    opacity: connected ? 1 : 0,
-                    transform: `rotate(-4deg) translateY(${connected ? 0 : 8}px)`,
-                    transition: `opacity 0.5s ease ${connected ? 900 : 0}ms, transform 0.6s ${DROP} ${connected ? 900 : 0}ms`,
-                  }}
-                >
-                  what we learn flows back down
-                </span>
               </div>
             </div>
           </div>
         </div>
 
-               {/* link to services */}
+        {/* link to services */}
         <div className="mt-10 flex justify-center lg:justify-end">
           <NavLink
             href="/platform"
