@@ -20,6 +20,7 @@ import ConnectsMobile from "./mobile/ConnectsMobile";
 import BuiltOnMobile from "./mobile/BuiltOnMobile";
 import SolutionsMobile from "./mobile/SolutionsMobile";
 import WaysMobile from "./mobile/WaysMobile";
+   import Pricing from "./Pricing";
 export default function HomePage({ path = "/" }: { path?: string }) {
   return (
     <>
@@ -36,6 +37,7 @@ export default function HomePage({ path = "/" }: { path?: string }) {
         <div className="hidden lg:block"><BuiltOn /></div><div className="lg:hidden"><BuiltOnMobile /></div>
         <div className="hidden lg:block"><Solutions /></div><div className="lg:hidden"><SolutionsMobile /></div>
        <div className="hidden lg:block"><WaysToWork /></div><div className="lg:hidden"><WaysMobile /></div>
+       <Pricing />
         <Enquire />
       </main>
       <Footer />

@@ -1,15 +1,54 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check, Loader2, Pin } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Briefcase,
+  Building2,
+  Check,
+  Factory,
+  Gem,
+  Lightbulb,
+  Loader2,
+  Mail,
+  MessageCircle,
+  MoreHorizontal,
+  Pencil,
+  Phone,
+  Rocket,
+  ShoppingBag,
+  type LucideIcon,
+} from "lucide-react";
 import { capabilities } from "@/lib/data";
-import Reveal from "./Reveal";
-import { hand } from "@/lib/fonts";
 import { SITE_EMAIL } from "@/lib/site";
-const stageOptions = ["Idea", "Pre-launch", "Already selling", "Established, going digital"];
-const businessTypes = ["D2C brand", "Manufacturer / exporter", "Jeweller", "Service business", "Other"];
-const contactMethods = ["Email", "Phone", "WhatsApp"];
-const stepTitles = ["Your stage", "Services", "Your business", "How to reach you"];
+import Appear from "./Appear";
+import { hand } from "@/lib/fonts";
+
+const SPRING = "cubic-bezier(0.34,1.4,0.64,1)";
+
+const stageOptions: { value: string; icon: LucideIcon; hint: string }[] = [
+  { value: "Idea", icon: Lightbulb, hint: "Just an idea for now" },
+  { value: "Pre-launch", icon: Rocket, hint: "Product ready, not selling yet" },
+  { value: "Already selling", icon: ShoppingBag, hint: "Selling, want to grow" },
+  { value: "Established, going digital", icon: Building2, hint: "Running business, moving online" },
+];
+
+const businessOptions: { value: string; icon: LucideIcon }[] = [
+  { value: "D2C brand", icon: ShoppingBag },
+  { value: "Manufacturer / exporter", icon: Factory },
+  { value: "Jeweller", icon: Gem },
+  { value: "Service business", icon: Briefcase },
+  { value: "Other", icon: MoreHorizontal },
+];
+
+const businessTypes = businessOptions.map((b) => b.value);
+
+const contactOptions: { value: string; icon: LucideIcon }[] = [
+  { value: "Email", icon: Mail },
+  { value: "Phone", icon: Phone },
+  { value: "WhatsApp", icon: MessageCircle },
+];
 
 type FormState = {
   stage: string;
@@ -25,123 +64,114 @@ type FormState = {
 };
 
 const initialState: FormState = {
-  stage: "Idea",
+  stage: "",
   name: "",
   email: "",
   capabilities: [],
   company: "",
   website: "",
-  businessType: "D2C brand",
+  businessType: "",
   contactMethod: "Email",
   phone: "",
   message: "",
 };
 
+const STEPS = ["stage", "business", "services", "company", "you", "contact", "message"] as const;
+type StepKey = (typeof STEPS)[number];
+
+const QUESTIONS: Record<StepKey, { q: string; help?: string }> = {
+  stage: { q: "Where is your business today?", help: "Pick the one that fits best." },
+  business: { q: "What kind of business is it?" },
+  services: { q: "What would you like help with?", help: "Pick as many as you like. You can change them later." },
+  company: { q: "What’s your business called?", help: "Add your website too, if you have one." },
+  you: { q: "Lovely. Who should we talk to?" },
+  contact: { q: "How would you like us to reach you?" },
+  message: { q: "Anything else we should know?", help: "Optional. A line or two about your idea is plenty." },
+};
+
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 const inputCls =
-  "w-full rounded-xl border border-[#0b1a3b]/12 bg-white px-4 py-3 text-[15px] text-[#0b1a3b] placeholder:text-slate-400 outline-none transition-[border-color,box-shadow] duration-300 focus:border-[#1e5eeb] focus:ring-4 focus:ring-[#1e5eeb]/15";
+  "w-full rounded-2xl border border-[#0b1a3b]/12 bg-white px-5 py-4 text-[17px] text-[#0b1a3b] placeholder:text-slate-400 outline-none transition-[border-color,box-shadow] duration-300 focus:border-[#1e5eeb] focus:ring-4 focus:ring-[#1e5eeb]/15";
 
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-medium text-[#0b1a3b]">{label}</span>
-      {children}
-      {error && <span className="mt-1.5 block text-[13px] text-rose-600">{error}</span>}
-    </label>
-  );
+/* slides each question in from the direction you're moving */
+function Slide({ dir, children }: { dir: number; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const a = el.animate(
+      [
+        { opacity: 0, transform: `translateX(${dir * 36}px)` },
+        { opacity: 1, transform: "translateX(0)" },
+      ],
+      { duration: 420, easing: "cubic-bezier(0.2,0.7,0.2,1)" }
+    );
+    return () => a.cancel();
+  }, [dir]);
+  return <div ref={ref}>{children}</div>;
 }
 
-function Choice({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+function Tile({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+  hint,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+  hint?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-[14.5px] font-medium transition-[border-color,background-color,box-shadow,scale] duration-300 active:scale-[0.98] ${
+      className={`group relative flex items-center gap-4 rounded-2xl p-4 text-left ring-1 transition-[background-color,box-shadow,translate,scale] duration-500 hover:-translate-y-0.5 active:scale-[0.98] ${
         active
-          ? "border-[#1e5eeb] bg-[#eef4ff] text-[#0b1a3b] shadow-[0_0_0_3px_rgba(30,94,235,0.12)]"
-          : "border-[#0b1a3b]/12 bg-white text-slate-700 hover:border-[#1e5eeb]/40"
+          ? "bg-[#0b1a3b] text-white shadow-[0_14px_28px_-16px_rgba(11,26,59,0.8)] ring-[#0b1a3b]"
+          : "bg-white text-[#0b1a3b] ring-[#0b1a3b]/10 hover:shadow-[0_12px_24px_-18px_rgba(30,94,235,0.6)] hover:ring-[#1e5eeb]/40"
       }`}
+      style={{ transitionTimingFunction: SPRING }}
     >
       <span
-        className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border-2 transition-colors duration-300 ${
-          active ? "border-[#1e5eeb]" : "border-slate-300"
+        className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-colors duration-300 ${
+          active ? "bg-white/10 text-[#7cc4f5]" : "bg-[#eef3fb] text-[#1e5eeb]"
         }`}
       >
-        <span
-          className="h-2 w-2 rounded-full bg-[#1e5eeb] transition-[scale] duration-300 ease-spring"
-          style={{ scale: active ? "1" : "0" }}
-        />
+        <Icon size={20} />
       </span>
-      {children}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[16px] font-semibold leading-tight">{label}</span>
+        {hint && (
+          <span className={`mt-0.5 block text-[13px] ${active ? "text-white/60" : "text-slate-500"}`}>{hint}</span>
+        )}
+      </span>
+      <span
+        className={`grid h-6 w-6 shrink-0 place-items-center rounded-full transition-[scale,opacity] duration-300 ${
+          active ? "bg-[#7cc4f5] text-[#0b1a3b] opacity-100" : "opacity-0"
+        }`}
+        style={{ scale: active ? "1" : "0.5", transitionTimingFunction: SPRING }}
+      >
+        <Check size={13} strokeWidth={3} />
+      </span>
     </button>
   );
 }
 
-function BriefNote({ data, sent, pinKey }: { data: FormState; sent: boolean; pinKey: number }) {
-  const rows: [string, string][] = [
-    ["stage", data.stage],
-    ["business", data.businessType],
-  ];
-  return (
-    <div className="relative mx-auto max-w-md lg:mx-0">
-      {sent && (
-        <span
-          key={`pin${pinKey}`}
-          aria-hidden
-          className="absolute -top-4 left-1/2 z-10 grid h-9 w-9 -translate-x-1/2 animate-pill-pop place-items-center rounded-full bg-[#e5484d] text-white shadow-[0_6px_14px_-4px_rgba(0,0,0,0.45)]"
-        >
-          <Pin size={16} />
-        </span>
-      )}
-      <div
-        className="relative rounded-[4px] bg-[#fff3b0] p-6 text-[#0b1a3b] shadow-[0_30px_50px_-28px_rgba(11,26,59,0.55)]"
-        style={{ rotate: "-1.5deg" }}
-        aria-live="polite"
-      >
-        <p className={`${hand.className} text-[24px] leading-none text-[#1e5eeb]`}>your brief</p>
-        <dl className={`${hand.className} mt-4 space-y-2 text-[21px] leading-snug`}>
-          {rows.map(([k, v]) => (
-            <div key={k} className="flex gap-2">
-              <dt className="shrink-0 text-[#0b1a3b]/50">{k}:</dt>
-              <dd key={v} className="animate-step-in">
-                {v}
-              </dd>
-            </div>
-          ))}
-          <div className="flex gap-2">
-            <dt className="shrink-0 text-[#0b1a3b]/50">services:</dt>
-            <dd key={data.capabilities.join("|")} className="animate-step-in">
-              {data.capabilities.length ? data.capabilities.join(", ") : "not picked yet"}
-            </dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="shrink-0 text-[#0b1a3b]/50">idea:</dt>
-            <dd className="line-clamp-3">{data.message.trim() || "…"}</dd>
-          </div>
-        </dl>
-        {sent && (
-          <span
-            className="absolute bottom-5 right-5 animate-pill-pop rounded-md border-2 border-[#1e5eeb] px-2.5 py-0.5 text-sm font-bold uppercase tracking-[0.12em] text-[#1e5eeb]"
-            style={{ rotate: "-8deg" }}
-          >
-            Sent
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function Enquire() {
-  const [step, setStep] = useState(0);
+  const [i, setI] = useState(0);
+  const [dir, setDir] = useState(1);
   const [data, setData] = useState<FormState>(initialState);
   const [showErrors, setShowErrors] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
-  const [pinKey, setPinKey] = useState(0);
   const [sendError, setSendError] = useState("");
   const [trap, setTrap] = useState("");
+  const autoTimer = useRef(0);
+
   /* ---------- handoffs from other sections ---------- */
   useEffect(() => {
     const applyBrief = (list: unknown) => {
@@ -155,7 +185,6 @@ export default function Enquire() {
     const applyIdea = (v: unknown) => {
       if (typeof v === "string" && v.trim()) setData((d) => ({ ...d, message: v.trim() }));
     };
-
     const r = requestAnimationFrame(() => {
       try {
         const brief = sessionStorage.getItem("skad-brief");
@@ -166,7 +195,6 @@ export default function Enquire() {
         /* ignore */
       }
     });
-
     const onBrief = (e: Event) => applyBrief((e as CustomEvent).detail);
     const onBiz = (e: Event) => applyBiz((e as CustomEvent).detail);
     const onIdea = (e: Event) => applyIdea((e as CustomEvent).detail);
@@ -175,54 +203,45 @@ export default function Enquire() {
     window.addEventListener("skad:idea", onIdea);
     return () => {
       cancelAnimationFrame(r);
+      window.clearTimeout(autoTimer.current);
       window.removeEventListener("skad:brief", onBrief);
       window.removeEventListener("skad:business", onBiz);
       window.removeEventListener("skad:idea", onIdea);
     };
   }, []);
 
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
-    setData((d) => ({ ...d, [key]: value }));
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => setData((d) => ({ ...d, [key]: value }));
 
-  const toggleCapability = (title: string) =>
-    update(
-      "capabilities",
-      data.capabilities.includes(title) ? data.capabilities.filter((c) => c !== title) : [...data.capabilities, title]
-    );
-
-  const errors = {
-    name: data.name.trim() ? "" : "Enter your name.",
-    email: isEmail(data.email) ? "" : "Enter a valid email address.",
-    capabilities: data.capabilities.length ? "" : "Pick at least one service.",
+  const errors: Record<StepKey, string> = {
+    stage: data.stage ? "" : "Pick where your business is today.",
+    business: data.businessType ? "" : "Pick the type of business.",
+    services: data.capabilities.length ? "" : "Pick at least one service.",
     company: data.company.trim() ? "" : "Enter your business name.",
-    phone: data.contactMethod !== "Email" && !data.phone.trim() ? "Add a number so we can reach you." : "",
+    you: !data.name.trim() ? "Enter your name." : !isEmail(data.email) ? "Enter a valid email address." : "",
+    contact: data.contactMethod !== "Email" && !data.phone.trim() ? "Add a number so we can reach you." : "",
+    message: "",
   };
 
-  const stepValid = [!errors.name && !errors.email, !errors.capabilities, !errors.company, !errors.phone];
+  const step = STEPS[i];
+  const last = i === STEPS.length - 1;
+  const err = showErrors ? errors[step] : "";
 
-  const next = () => {
-    if (!stepValid[step]) {
-      setShowErrors(true);
-      return;
-    }
+  const go = (n: number) => {
+    window.clearTimeout(autoTimer.current);
+    setDir(n >= i ? 1 : -1);
     setShowErrors(false);
-    setStep((s) => Math.min(s + 1, 3));
+    setSendError("");
+    setI(Math.max(0, Math.min(STEPS.length - 1, n)));
   };
 
-  const back = () => {
-    setShowErrors(false);
-    setStep((s) => Math.max(s - 1, 0));
+  // choosing a tile moves on by itself after a beat
+  const pickAndAdvance = (apply: () => void) => {
+    apply();
+    window.clearTimeout(autoTimer.current);
+    autoTimer.current = window.setTimeout(() => go(i + 1), 320);
   };
 
-  const handleSubmit = async () => {
-    if (step < 3) {
-      next();
-      return;
-    }
-    if (!stepValid[3]) {
-      setShowErrors(true);
-      return;
-    }
+  const send = async () => {
     setStatus("sending");
     setSendError("");
     try {
@@ -233,7 +252,6 @@ export default function Enquire() {
       });
       if (!res.ok) throw new Error(String(res.status));
       setStatus("done");
-      setPinKey((k) => k + 1);
       try {
         sessionStorage.removeItem("skad-brief");
         sessionStorage.removeItem("skad-business");
@@ -247,309 +265,364 @@ export default function Enquire() {
     }
   };
 
-  const reset = () => {
-    setData(initialState);
-    setStep(0);
-    setShowErrors(false);
-    setStatus("idle");
+  const next = () => {
+    if (errors[step]) {
+      setShowErrors(true);
+      return;
+    }
+    if (last) void send();
+    else go(i + 1);
   };
 
-  const err = (msg: string) => (showErrors && msg ? msg : undefined);
-  const sent = status === "done";
+  const reset = () => {
+    setData(initialState);
+    setStatus("idle");
+    setShowErrors(false);
+    setDir(-1);
+    setI(0);
+  };
+
+  const summary: { label: string; value: string; step: number }[] = [
+    { label: "Stage", value: data.stage, step: 0 },
+    { label: "Business", value: data.businessType, step: 1 },
+    { label: "Services", value: data.capabilities.join(", "), step: 2 },
+    { label: "Company", value: data.company, step: 3 },
+    { label: "Name", value: data.name, step: 4 },
+    {
+      label: "Contact",
+      value: data.contactMethod === "Email" ? data.email : data.phone ? `${data.contactMethod}: ${data.phone}` : "",
+      step: 5,
+    },
+    { label: "Note", value: data.message, step: 6 },
+  ].filter((s) => s.value);
+
+  const progress = status === "done" ? 100 : ((i + 1) / STEPS.length) * 100;
 
   return (
-    <section id="enquire" className="bg-[#e3eaf6] py-24 lg:py-32">
-      <div className="wrap grid gap-12 lg:grid-cols-12 lg:gap-14">
-        {/* ---------- left: copy + live brief ---------- */}
+    <section id="enquire" className="bg-[#e3eaf6] py-20 lg:py-32">
+      <div className="wrap grid gap-10 lg:grid-cols-12 lg:gap-14">
+        {/* ---------- left ---------- */}
         <div className="lg:col-span-5">
-          <Reveal>
+          <Appear>
             <h2 className="text-balance text-[2.3rem] font-bold leading-[1.04] tracking-[-0.035em] text-[#0b1a3b] sm:text-[3rem]">
               Tell us what you’re building.
             </h2>
             <p className="mt-5 max-w-md text-[16.5px] leading-relaxed text-slate-600">
-              Four quick steps. We’ll use your brief to plan the first call, so it starts with your business, not a
-              sales pitch.
+              Seven quick questions, about two minutes. We’ll use your answers to plan the first call around your
+              business.
             </p>
-            <ul className="mt-6 space-y-2.5">
-              {["No obligation, just a conversation", "Change any answer before you send"].map((t) => (
-                <li key={t} className="flex items-center gap-2.5 text-[15px] text-[#0b1a3b]">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#1e5eeb] text-white">
-                    <Check size={12} strokeWidth={3} />
-                  </span>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["No obligation", "A real person replies", "Change anything before you send"].map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-medium text-[#0b1a3b] ring-1 ring-[#0b1a3b]/6"
+                >
+                  <Check size={13} strokeWidth={3} className="text-[#1e5eeb]" />
                   {t}
-                </li>
+                </span>
               ))}
-            </ul>
-          </Reveal>
+            </div>
+          </Appear>
 
-          <div className="mt-12 hidden lg:block">
-            <BriefNote data={data} sent={sent} pinKey={pinKey} />
+          {/* live brief (desktop) */}
+          <div className="mt-10 hidden lg:block">
+            <p className={`${hand.className} text-[23px] text-[#1e5eeb]`}>your brief so far</p>
+            <div className="mt-3 rounded-3xl bg-white p-2 ring-1 ring-[#0b1a3b]/6">
+              {summary.length === 0 ? (
+                <p className="px-4 py-5 text-[14.5px] text-slate-500">Your answers will appear here as you go.</p>
+              ) : (
+                <ul>
+                  {summary.map((s) => (
+                    <li key={s.label} className="animate-step-in">
+                      <button
+                        type="button"
+                        onClick={() => status !== "done" && go(s.step)}
+                        className="group flex w-full items-start gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-[#f4f8ff]"
+                      >
+                        <span className="w-20 shrink-0 pt-0.5 text-[12.5px] font-semibold text-slate-500">{s.label}</span>
+                        <span className="min-w-0 flex-1 text-[14.5px] leading-snug text-[#0b1a3b] [overflow-wrap:anywhere]">
+                          {s.value}
+                        </span>
+                        {status !== "done" && (
+                          <Pencil size={14} className="mt-1 shrink-0 text-slate-300 transition-colors group-hover:text-[#1e5eeb]" />
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ---------- right: the form sheet ---------- */}
+        {/* ---------- right: the conversation ---------- */}
         <div className="min-w-0 lg:col-span-7">
-          <Reveal delay={120}>
-            <div className="overflow-hidden rounded-2xl bg-white shadow-[0_40px_70px_-40px_rgba(11,26,59,0.5)] ring-1 ring-[#0b1a3b]/6">
-              {/* step tabs */}
-              <div
-                className="border-b border-dashed border-[#1e5eeb]/20 px-4 pt-4 sm:px-7 sm:pt-6"
-                style={{
-                  backgroundColor: "#f4f8ff",
-                  backgroundImage:
-                    "linear-gradient(rgba(30,94,235,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(30,94,235,0.055) 1px, transparent 1px)",
-                  backgroundSize: "22px 22px",
-                }}
-              >
-                <div className="relative grid grid-cols-4">
-                  {stepTitles.map((t, i) => {
-                    const reachable = !sent && i <= step;
-                    const on = i === step && !sent;
-                    const done = sent || i < step;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        disabled={!reachable}
-                        onClick={() => reachable && setStep(i)}
-                        className="flex min-w-0 flex-col items-start gap-1.5 pb-4 text-left disabled:cursor-default"
-                      >
-                        <span
-                          className={`grid h-7 w-7 place-items-center rounded-full text-[12px] font-bold transition-colors duration-300 ${
-                            done ? "bg-[#1e5eeb] text-white" : on ? "bg-[#0b1a3b] text-white" : "bg-white text-slate-400 ring-1 ring-slate-200"
-                          }`}
-                        >
-                          {done ? <Check size={13} strokeWidth={3} /> : i + 1}
-                        </span>
-                        <span
-                          className={`hidden truncate text-[13px] font-semibold sm:block ${
-                            on ? "text-[#0b1a3b]" : done ? "text-slate-600" : "text-slate-400"
-                          }`}
-                        >
-                          {t}
-                        </span>
-                      </button>
-                    );
-                  })}
-                  <span
-                    aria-hidden
-                    className="absolute bottom-0 left-0 h-[3px] w-1/4 rounded-full bg-[#1e5eeb]"
-                    style={{
-                      transform: `translateX(${(sent ? 3 : step) * 100}%)`,
-                      transition: "transform 0.55s cubic-bezier(0.34,1.4,0.64,1)",
-                    }}
-                  />
-                </div>
+          <Appear delay={100}>
+            <div className="overflow-hidden rounded-3xl bg-white shadow-[0_40px_70px_-40px_rgba(11,26,59,0.5)] ring-1 ring-[#0b1a3b]/6">
+              {/* progress */}
+              <div className="h-1.5 bg-[#1e5eeb]/10">
+                <div className="h-full rounded-r-full bg-[#1e5eeb]" style={{ width: `${progress}%`, transition: `width 0.6s ${SPRING}` }} />
               </div>
 
-              <div className="p-5 sm:p-8">
-                {sent ? (
-                  <div className="animate-step-in py-8 text-center">
-                    <span className="mx-auto grid h-14 w-14 animate-pill-pop place-items-center rounded-full bg-[#1e5eeb] text-white">
-                      <Check size={26} strokeWidth={3} />
-                    </span>
-                    <h3 className="mt-5 text-2xl font-bold text-[#0b1a3b]">{`Thanks, ${data.name.trim().split(" ")[0]}.`}</h3>
-                    <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-slate-600">
-                      {`Your brief is with our team. We’ll reply to ${data.email.trim()}.`}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={reset}
-                      className="mt-7 rounded-xl border border-[#0b1a3b]/15 px-5 py-2.5 text-sm font-semibold text-[#0b1a3b] transition-colors hover:bg-[#f4f8ff]"
-                    >
-                      Send another enquiry
-                    </button>
-                  </div>
+              <div className="p-6 sm:p-9">
+                {status === "done" ? (
+                  <Slide dir={1}>
+                    <div className="py-6 text-center">
+                      <span className="mx-auto grid h-16 w-16 animate-pill-pop place-items-center rounded-full bg-[#1e5eeb] text-white shadow-[0_14px_28px_-12px_rgba(30,94,235,0.9)]">
+                        <Check size={30} strokeWidth={3} />
+                      </span>
+                      <h3 className="mt-6 text-[1.8rem] font-bold tracking-[-0.02em] text-[#0b1a3b]">
+                        {`Thanks, ${data.name.trim().split(" ")[0]}!`}
+                      </h3>
+                      <p className="mx-auto mt-2 max-w-sm text-[15.5px] leading-relaxed text-slate-600">
+                        {`Your brief is with our team. We’ll reply to ${data.email.trim()}.`}
+                      </p>
+                      <div className="mx-auto mt-6 max-w-sm space-y-1.5 rounded-2xl bg-[#f4f8ff] p-4 text-left text-[14px]">
+                        {summary.slice(0, 4).map((s) => (
+                          <p key={s.label} className="flex gap-3">
+                            <span className="w-20 shrink-0 font-semibold text-slate-500">{s.label}</span>
+                            <span className="text-[#0b1a3b] [overflow-wrap:anywhere]">{s.value}</span>
+                          </p>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={reset}
+                        className="mt-7 rounded-xl px-5 py-2.5 text-[14.5px] font-semibold text-[#1e5eeb] underline decoration-[#1e5eeb]/30 underline-offset-4"
+                      >
+                        Send another enquiry
+                      </button>
+                    </div>
+                  </Slide>
                 ) : (
                   <form
                     noValidate
                     onSubmit={(e) => {
                       e.preventDefault();
-                      void handleSubmit();
+                      next();
                     }}
                   >
+                    {/* spam trap */}
                     <input
-  type="text"
-  name="company_website"
-  value={trap}
-  onChange={(e) => setTrap(e.target.value)}
-  tabIndex={-1}
-  autoComplete="off"
-  aria-hidden="true"
-  className="absolute left-[-9999px] h-px w-px opacity-0"
-/>
-                    <p className="text-sm font-medium text-[#1e5eeb] sm:hidden">
-                      Step {step + 1} of 4: {stepTitles[step]}
+                      type="text"
+                      name="company_website"
+                      value={trap}
+                      onChange={(e) => setTrap(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      className="absolute left-[-9999px] h-px w-px opacity-0"
+                    />
+
+                    <p className="text-[13px] font-semibold text-[#1e5eeb]">
+                      Question {i + 1} of {STEPS.length}
                     </p>
 
-                    <div key={step} className="mt-3 animate-step-in space-y-6 sm:mt-0">
-                      {step === 0 && (
-                        <>
-                          <div>
-                            <p className="mb-3 text-[15px] font-semibold text-[#0b1a3b]">Where is your business today?</p>
-                            <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div className="min-h-[360px]">
+                      <Slide key={i} dir={dir}>
+                        <h3 className="mt-2 text-balance text-[1.6rem] font-bold leading-tight tracking-[-0.02em] text-[#0b1a3b] sm:text-[1.9rem]">
+                          {QUESTIONS[step].q}
+                        </h3>
+                        {QUESTIONS[step].help && <p className="mt-2 text-[15px] text-slate-500">{QUESTIONS[step].help}</p>}
+
+                        <div className="mt-7">
+                          {step === "stage" && (
+                            <div className="grid gap-3 sm:grid-cols-2">
                               {stageOptions.map((o) => (
-                                <Choice key={o} active={data.stage === o} onClick={() => update("stage", o)}>
-                                  {o}
-                                </Choice>
+                                <Tile
+                                  key={o.value}
+                                  icon={o.icon}
+                                  label={o.value}
+                                  hint={o.hint}
+                                  active={data.stage === o.value}
+                                  onClick={() => pickAndAdvance(() => update("stage", o.value))}
+                                />
                               ))}
                             </div>
-                          </div>
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <Field label="Your name" error={err(errors.name)}>
-                              <input
-                                className={inputCls}
-                                placeholder="Full name"
-                                autoComplete="name"
-                                value={data.name}
-                                onChange={(e) => update("name", e.target.value)}
-                              />
-                            </Field>
-                            <Field label="Work email" error={err(errors.email)}>
-                              <input
-                                type="email"
-                                className={inputCls}
-                                placeholder="you@company.com"
-                                autoComplete="email"
-                                value={data.email}
-                                onChange={(e) => update("email", e.target.value)}
-                              />
-                            </Field>
-                          </div>
-                        </>
-                      )}
+                          )}
 
-                      {step === 1 && (
-                        <div>
-                          <p className="mb-3 text-[15px] font-semibold text-[#0b1a3b]">Which services do you need?</p>
-                          <div className="flex flex-wrap gap-2">
-                            {capabilities.map((c) => {
-                              const on = data.capabilities.includes(c.title);
-                              return (
-                                <button
-                                  key={c.n}
-                                  type="button"
-                                  aria-pressed={on}
-                                  onClick={() => toggleCapability(c.title)}
-                                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13.5px] font-medium transition-[border-color,background-color,color,scale] duration-300 active:scale-95 ${
-                                    on
-                                      ? "border-[#1e5eeb] bg-[#1e5eeb] text-white"
-                                      : "border-[#0b1a3b]/12 bg-white text-slate-700 hover:border-[#1e5eeb]/40"
-                                  }`}
-                                >
-                                  {on && <Check size={13} strokeWidth={3} />}
-                                  {c.title}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {err(errors.capabilities) && <p className="mt-3 text-[13px] text-rose-600">{errors.capabilities}</p>}
-                          <p className="mt-4 text-[13px] text-slate-500">Not sure? Pick what feels closest. We’ll refine it together.</p>
-                        </div>
-                      )}
+                          {step === "business" && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {businessOptions.map((o) => (
+                                <Tile
+                                  key={o.value}
+                                  icon={o.icon}
+                                  label={o.value}
+                                  active={data.businessType === o.value}
+                                  onClick={() => pickAndAdvance(() => update("businessType", o.value))}
+                                />
+                              ))}
+                            </div>
+                          )}
 
-                      {step === 2 && (
-                        <>
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <Field label="Business name" error={err(errors.company)}>
+                          {step === "services" && (
+                            <div className="flex flex-wrap gap-2">
+                              {capabilities.map((c) => {
+                                const on = data.capabilities.includes(c.title);
+                                return (
+                                  <button
+                                    key={c.n}
+                                    type="button"
+                                    aria-pressed={on}
+                                    onClick={() =>
+                                      update(
+                                        "capabilities",
+                                        on ? data.capabilities.filter((x) => x !== c.title) : [...data.capabilities, c.title]
+                                      )
+                                    }
+                                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[14.5px] font-medium ring-1 transition-[background-color,color,scale] duration-300 active:scale-95 ${
+                                      on
+                                        ? "bg-[#0b1a3b] text-white ring-[#0b1a3b]"
+                                        : "bg-white text-slate-700 ring-[#0b1a3b]/12 hover:ring-[#1e5eeb]/40"
+                                    }`}
+                                  >
+                                    <span
+                                      className="grid h-4 w-4 place-items-center"
+                                      style={{ scale: on ? "1" : "0", width: on ? 16 : 0, transition: `scale 0.3s ${SPRING}, width 0.3s ease` }}
+                                    >
+                                      <Check size={13} strokeWidth={3} className="text-[#7cc4f5]" />
+                                    </span>
+                                    {c.title}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {step === "company" && (
+                            <div className="space-y-3">
                               <input
+                                autoFocus
                                 className={inputCls}
-                                placeholder="Company or brand"
+                                placeholder="Business or brand name"
                                 autoComplete="organization"
                                 value={data.company}
                                 onChange={(e) => update("company", e.target.value)}
                               />
-                            </Field>
-                            <Field label="Website (optional)">
                               <input
                                 className={inputCls}
-                                placeholder="yourbrand.com"
+                                placeholder="Website (optional), e.g. yourbrand.com"
                                 autoComplete="url"
                                 value={data.website}
                                 onChange={(e) => update("website", e.target.value)}
                               />
-                            </Field>
-                          </div>
-                          <div>
-                            <p className="mb-3 text-[15px] font-semibold text-[#0b1a3b]">What kind of business is it?</p>
-                            <div className="grid gap-2.5 sm:grid-cols-2">
-                              {businessTypes.map((o) => (
-                                <Choice key={o} active={data.businessType === o} onClick={() => update("businessType", o)}>
-                                  {o}
-                                </Choice>
-                              ))}
                             </div>
-                          </div>
-                        </>
-                      )}
-
-                      {step === 3 && (
-                        <>
-                          <div>
-                            <p className="mb-3 text-[15px] font-semibold text-[#0b1a3b]">How should we reach you?</p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {contactMethods.map((o) => (
-                                <Choice key={o} active={data.contactMethod === o} onClick={() => update("contactMethod", o)}>
-                                  {o}
-                                </Choice>
-                              ))}
-                            </div>
-                          </div>
-                          {data.contactMethod !== "Email" && (
-                            <Field label="Phone number" error={err(errors.phone)}>
-                              <input
-                                type="tel"
-                                className={inputCls}
-                                placeholder="+91 98765 43210"
-                                autoComplete="tel"
-                                value={data.phone}
-                                onChange={(e) => update("phone", e.target.value)}
-                              />
-                            </Field>
                           )}
-                          <Field label="Your idea, in a line or two (optional)">
+
+                          {step === "you" && (
+                            <div className="space-y-3">
+                              <input
+                                autoFocus
+                                className={inputCls}
+                                placeholder="Your full name"
+                                autoComplete="name"
+                                value={data.name}
+                                onChange={(e) => update("name", e.target.value)}
+                              />
+                              <input
+                                type="email"
+                                className={inputCls}
+                                placeholder="Work email, e.g. you@company.com"
+                                autoComplete="email"
+                                value={data.email}
+                                onChange={(e) => update("email", e.target.value)}
+                              />
+                            </div>
+                          )}
+
+                          {step === "contact" && (
+                            <div>
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                {contactOptions.map((o) => (
+                                  <Tile
+                                    key={o.value}
+                                    icon={o.icon}
+                                    label={o.value}
+                                    active={data.contactMethod === o.value}
+                                    onClick={() => update("contactMethod", o.value)}
+                                  />
+                                ))}
+                              </div>
+                              <div
+                                className={`grid transition-[grid-template-rows] duration-500 ease-out ${
+                                  data.contactMethod !== "Email" ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                                }`}
+                              >
+                                <div className="overflow-hidden">
+                                  <input
+                                    type="tel"
+                                    className={`${inputCls} mt-3`}
+                                    placeholder="+91 98765 43210"
+                                    autoComplete="tel"
+                                    value={data.phone}
+                                    onChange={(e) => update("phone", e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {step === "message" && (
                             <textarea
-                              rows={3}
+                              autoFocus
+                              rows={4}
                               className={`${inputCls} resize-none`}
                               placeholder="Tell us a little about what you’re building"
                               value={data.message}
                               onChange={(e) => update("message", e.target.value)}
                             />
-                          </Field>
-                        </>
-                      )}
+                          )}
+                        </div>
+
+                        {err && (
+                          <p role="alert" className="mt-4 animate-step-in text-[14px] font-medium text-rose-600">
+                            {err}
+                          </p>
+                        )}
+                      </Slide>
                     </div>
-                          {sendError && (
-  <p role="alert" className="mt-6 rounded-xl bg-rose-50 px-4 py-3 text-[14px] leading-relaxed text-rose-700 ring-1 ring-rose-200">
-    {sendError}
-  </p>
-)}
-                    <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row">
-                      {step > 0 && (
+
+                    {sendError && (
+                      <p role="alert" className="mt-2 rounded-xl bg-rose-50 px-4 py-3 text-[14px] leading-relaxed text-rose-700 ring-1 ring-rose-200">
+                        {sendError}
+                      </p>
+                    )}
+
+                    {/* footer */}
+                    <div className="mt-6 flex items-center justify-between gap-4 border-t border-dashed border-[#1e5eeb]/20 pt-6">
+                      {i > 0 ? (
                         <button
                           type="button"
-                          onClick={back}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#0b1a3b]/15 px-5 py-3.5 text-[15px] font-semibold text-[#0b1a3b] transition-colors hover:bg-[#f4f8ff]"
+                          onClick={() => go(i - 1)}
+                          className="inline-flex items-center gap-1.5 rounded-xl px-2 py-2 text-[15px] font-semibold text-slate-600 transition-colors hover:text-[#0b1a3b]"
                         >
                           <ArrowLeft size={16} /> Back
                         </button>
+                      ) : (
+                        <span />
                       )}
-                      <button
-                        type="submit"
-                        disabled={status === "sending"}
-                        className="group inline-flex flex-1 items-center justify-center gap-2.5 rounded-xl bg-[#0b1a3b] px-6 py-3.5 text-[15px] font-semibold text-white shadow-[0_12px_28px_-14px_rgba(11,26,59,0.8)] transition-[background-color,translate,scale] duration-700 ease-spring hover:-translate-y-0.5 hover:bg-[#1e5eeb] active:scale-[0.97] active:duration-100 disabled:cursor-wait disabled:opacity-80"
-                      >
-                        {status === "sending" ? (
-                          <>
-                            <Loader2 size={17} className="animate-spin" /> Sending…
-                          </>
-                        ) : (
-                          <>
-                            {step === 3 ? "Send my brief" : "Continue"}
-                            <ArrowRight size={16} className="transition-[translate] duration-700 ease-spring group-hover:translate-x-1" />
-                          </>
-                        )}
-                      </button>
+
+                      <div className="flex items-center gap-4">
+                        <span className="hidden text-[13px] text-slate-400 sm:inline">
+                          or press <kbd className="rounded bg-slate-100 px-1.5 py-0.5 font-sans text-[12px] text-slate-600">Enter</kbd>
+                        </span>
+                        <button
+                          type="submit"
+                          disabled={status === "sending"}
+                          className="group inline-flex items-center gap-2 rounded-xl bg-[#0b1a3b] px-6 py-3.5 text-[15px] font-semibold text-white shadow-[0_12px_28px_-14px_rgba(11,26,59,0.8)] transition-[background-color,translate,scale] duration-500 ease-spring hover:-translate-y-0.5 hover:bg-[#1e5eeb] active:scale-[0.97] disabled:cursor-wait disabled:opacity-80"
+                        >
+                          {status === "sending" ? (
+                            <>
+                              <Loader2 size={17} className="animate-spin" /> Sending…
+                            </>
+                          ) : (
+                            <>
+                              {last ? "Send my brief" : "Continue"}
+                              <ArrowRight size={16} className="transition-[translate] duration-500 ease-spring group-hover:translate-x-1" />
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     <p className="mt-5 text-[12.5px] leading-relaxed text-slate-500">
@@ -563,12 +636,7 @@ export default function Enquire() {
                 )}
               </div>
             </div>
-          </Reveal>
-
-          {/* brief note on phones and tablets */}
-          <div className="mt-10 lg:hidden">
-            <BriefNote data={data} sent={sent} pinKey={pinKey} />
-          </div>
+          </Appear>
         </div>
       </div>
     </section>

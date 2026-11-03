@@ -12,6 +12,7 @@ const ROUTES: Record<string, string> = {
   "/method": "method",
   "/enquire": "enquire",
   "/ways": "ways",
+    "/pricing": "pricing",
 };
 
 export function scrollToPath(path: string, behavior: ScrollBehavior = "smooth"): boolean {
