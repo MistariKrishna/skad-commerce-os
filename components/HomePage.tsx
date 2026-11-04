@@ -12,6 +12,7 @@ import Solutions from "./Solutions";
 import WaysToWork from "./WaysToWork";
 import JourneyMobile from "./mobile/JourneyMobile";
 import Enquire from "./Enquire";
+   import PricingMobile from "./mobile/PricingMobile";
 import Footer from "./Footer";
 import SectionScroll from "./SectionScroll";
 import ProblemMobile from "./mobile/ProblemMobile";
@@ -37,7 +38,7 @@ export default function HomePage({ path = "/" }: { path?: string }) {
         <div className="hidden lg:block"><BuiltOn /></div><div className="lg:hidden"><BuiltOnMobile /></div>
         <div className="hidden lg:block"><Solutions /></div><div className="lg:hidden"><SolutionsMobile /></div>
        <div className="hidden lg:block"><WaysToWork /></div><div className="lg:hidden"><WaysMobile /></div>
-       <Pricing />
+          {/* <div className="hidden lg:block"><Pricing /></div><div className="lg:hidden"><PricingMobile /></div> */}
         <Enquire />
       </main>
       <Footer />
