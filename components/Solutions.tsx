@@ -23,7 +23,7 @@ type Persona = {
   cta: string;
 };
 
-const personas: Persona[] = [
+export const personas: Persona[] = [
   {
     business: "D2C brand",
     icon: ShoppingBag,
@@ -66,7 +66,7 @@ const personas: Persona[] = [
   },
 ];
 
-const pickBusiness = (biz: string) => {
+export const pickBusiness = (biz: string) => {
   try {
     sessionStorage.setItem("skad-business", biz);
   } catch {
@@ -75,7 +75,7 @@ const pickBusiness = (biz: string) => {
   window.dispatchEvent(new CustomEvent("skad:business", { detail: biz }));
 };
 
-function TypingBubble({ side }: { side: "them" | "us" }) {
+export function TypingBubble({ side }: { side: "them" | "us" }) {
   return (
     <div className={`flex animate-pill-pop ${side === "us" ? "justify-end" : "justify-start"}`}>
       <span

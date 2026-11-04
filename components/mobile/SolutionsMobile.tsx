@@ -1,170 +1,240 @@
 "use client";
 
-import { ArrowRight, Briefcase, Factory, Gem, ShoppingBag, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
+import { ArrowRight } from "lucide-react";
 import NavLink from "../NavLink";
-import Appear, { MobileHead } from "../Appear";
+import { MobileHead, useSeen } from "../Appear";
+import { personas, pickBusiness } from "../Solutions";
+import { capabilities } from "@/lib/data";
 import { hand } from "@/lib/fonts";
 
-type Solution = {
-  business: string;
-  icon: LucideIcon;
-  short: string;
-  eyebrow: string;
-  title: string;
-  text: string;
-  pains: string[];
-  services: string[];
-  cta: string;
+const SPRING = "cubic-bezier(0.34,1.4,0.64,1)";
+
+const SHORT: Record<string, string> = {
+  "D2C brand": "D2C",
+  "Manufacturer / exporter": "Maker",
+  Jeweller: "Jeweller",
+  "Service business": "Services",
 };
 
-const solutions: Solution[] = [
-  {
-    business: "D2C brand",
-    icon: ShoppingBag,
-    short: "D2C brand",
-    eyebrow: "For founders and growing brands",
-    title: "D2C brands",
-    text: "Launch without hiring ten agencies, then grow with SEO, CRM and automation working from the same data.",
-    pains: ["too many agencies, no one in charge", "ads bring buyers, but they don’t come back"],
-    services: ["Brand Infrastructure", "E-commerce", "Marketing", "CRM"],
-    cta: "Start as a D2C brand",
-  },
-  {
-    business: "Manufacturer / exporter",
-    icon: Factory,
-    short: "Manufacturer",
-    eyebrow: "For makers and traders",
-    title: "Manufacturers & exporters",
-    text: "Take a proven product range online, with B2B ordering, direct-to-consumer channels and international trade in one place.",
-    pains: ["great product, no online presence", "orders still arrive by email and phone"],
-    services: ["E-commerce", "Content", "Operations", "Automation"],
-    cta: "Start as a manufacturer",
-  },
-  {
-    business: "Jeweller",
-    icon: Gem,
-    short: "Jeweller",
-    eyebrow: "For jewellers",
-    title: "Jewellery & diamonds",
-    text: "Catalogue, content and storefronts made for high-value, considered purchases, where trust comes before the sale.",
-    pains: ["photos don’t show the sparkle", "buyers need trust before they pay"],
-    services: ["Content", "E-commerce", "Brand Infrastructure", "Marketing"],
-    cta: "Start as a jeweller",
-  },
-  {
-    business: "Service business",
-    icon: Briefcase,
-    short: "Service firm",
-    eyebrow: "For advisers and service firms",
-    title: "Service businesses",
-    text: "Turn expertise into a findable, bookable service, with leads captured, followed up and measured automatically.",
-    pains: ["hard to find on Google", "leads slip through the cracks"],
-    services: ["SEO/GEO", "CRM", "Automation", "Analytics"],
-    cta: "Start as a service business",
-  },
-];
-
-const pickBusiness = (biz: string) => {
-  try {
-    sessionStorage.setItem("skad-business", biz);
-  } catch {
-    /* storage unavailable */
-  }
-  window.dispatchEvent(new CustomEvent("skad:business", { detail: biz }));
-};
+const describe = (title: string) => capabilities.find((c) => c.title === title)?.description ?? "";
 
 export default function SolutionsMobile() {
-  const jump = (i: number) => document.getElementById(`sol-m-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const { ref: machineRef, seen } = useSeen<HTMLDivElement>(0.3);
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const touchRef = useRef<{ x: number; y: number } | null>(null);
+  const [p, setP] = useState(0);
+
+  // the ticket feeds out of the slot whenever it changes
+  useEffect(() => {
+    const el = ticketRef.current;
+    if (!seen || !el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const a = el.animate(
+      [
+        { transform: "translateY(-102%)" },
+        { transform: "translateY(2%)", offset: 0.82 },
+        { transform: "translateY(0)" },
+      ],
+      { duration: 1000, easing: "cubic-bezier(0.3,0.7,0.2,1)", fill: "both" }
+    );
+    return () => a.cancel();
+  }, [p, seen]);
+
+  const choose = (i: number) => setP((i + personas.length) % personas.length);
+
+  const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    const t = e.touches[0];
+    touchRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+    const start = touchRef.current;
+    touchRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) choose(p + (dx < 0 ? 1 : -1));
+  };
+
+  const s = personas[p];
+  const Icon = s.icon;
 
   return (
     <section id="solutions-m" className="bg-[#e3eaf6] py-20">
-      <div className="wrap max-w-2xl">
+      {/* ticket animations */}
+      <style>{`
+        @keyframes tk-strike { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes tk-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @keyframes tk-line { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+        .tk-strike { transform-origin: left center; transform: scaleX(0); animation: tk-strike 0.5s cubic-bezier(0.6,0,0.2,1) forwards; }
+        .tk-in { opacity: 0; animation: tk-in 0.5s cubic-bezier(0.2,0.7,0.2,1) forwards; }
+        .tk-line { transform-origin: top center; transform: scaleY(0); animation: tk-line 0.9s cubic-bezier(0.6,0,0.2,1) forwards; }
+        @media (prefers-reduced-motion: reduce) {
+          .tk-strike, .tk-in, .tk-line { animation: none; transform: none; opacity: 1; }
+        }
+      `}</style>
+
+      <div className="wrap max-w-xl">
         <MobileHead
           title="Built around the way your business works."
-          text="Pick the one that sounds like you. We’ll bring the services that matter to it."
+          text="Pick the one that sounds like you, and we’ll print your route."
         />
 
-        {/* which one are you? */}
-        <Appear className="mt-8">
-          <p className="text-sm font-semibold text-[#0b1a3b]">Which one are you?</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {solutions.map((s, i) => {
-              const Icon = s.icon;
-              return (
-                <button
-                  key={s.title}
-                  type="button"
-                  onClick={() => jump(i)}
-                  className="flex flex-col items-start gap-3 rounded-2xl bg-white p-4 text-left ring-1 ring-[#0b1a3b]/8 transition-[scale,box-shadow] duration-300 active:scale-[0.97]"
-                >
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#eef3fb] text-[#1e5eeb]">
-                    <Icon size={18} />
-                  </span>
-                  <span className="text-[15px] font-semibold leading-tight text-[#0b1a3b]">{s.short}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Appear>
-
-        {/* every audience, in full */}
-        <div className="mt-10 space-y-5">
-          {solutions.map((s, i) => {
-            const Icon = s.icon;
+        {/* business picker */}
+        <div
+          role="tablist"
+          aria-label="Choose your business"
+          className="relative mt-8 grid grid-cols-4 rounded-2xl bg-white p-1 shadow-[0_10px_24px_-18px_rgba(11,26,59,0.5)] ring-1 ring-[#0b1a3b]/6"
+        >
+          <span
+            aria-hidden
+            className="absolute inset-y-1 left-1 rounded-xl bg-[#0b1a3b]"
+            style={{
+              width: "calc((100% - 0.5rem) / 4)",
+              transform: `translateX(${p * 100}%)`,
+              transition: `transform 0.55s ${SPRING}`,
+            }}
+          />
+          {personas.map((x, i) => {
+            const on = i === p;
+            const XIcon = x.icon;
             return (
-              <Appear key={s.title}>
-                <article id={`sol-m-${i}`} className="scroll-mt-24 overflow-hidden rounded-3xl bg-[#0b1a3b] text-white shadow-[0_30px_60px_-35px_rgba(11,26,59,0.75)]">
-                  <div
-                    className="flex items-center gap-4 border-b border-dashed border-white/15 p-5"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(rgba(124,196,245,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(124,196,245,0.08) 1px, transparent 1px)",
-                      backgroundSize: "22px 22px",
-                    }}
-                  >
-                    <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 text-[#7cc4f5]">
-                      <Icon size={24} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[13px] text-white/60">{s.eyebrow}</p>
-                      <h3 className="text-[1.45rem] font-bold leading-tight tracking-[-0.02em]">{s.title}</h3>
+              <button
+                key={x.title}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                aria-label={x.title}
+                onClick={() => choose(i)}
+                className={`relative z-10 flex flex-col items-center gap-1.5 rounded-xl py-3 transition-colors duration-300 ${
+                  on ? "text-white" : "text-slate-500"
+                }`}
+              >
+                <XIcon size={19} className={on ? "text-[#7cc4f5]" : "text-[#1e5eeb]"} />
+                <span className="text-[11.5px] font-semibold">{SHORT[x.business] ?? x.title}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* the machine */}
+        <div ref={machineRef} className="mt-8">
+          {/* slot */}
+          <div className="relative z-10 mx-1 h-4 rounded-full bg-[#0b1a3b] shadow-[0_8px_16px_-8px_rgba(11,26,59,0.8)]">
+            <span className="absolute inset-x-6 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-black/50" />
+          </div>
+
+          {/* ticket feed */}
+          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="-mt-2 touch-pan-y overflow-hidden px-3 pb-6">
+            {seen ? (
+              <div
+                key={p}
+                ref={ticketRef}
+                className="relative rounded-b-[26px] rounded-t-md bg-white shadow-[0_30px_50px_-30px_rgba(11,26,59,0.55)]"
+              >
+                {/* top: the problem */}
+                <div className="px-5 pb-6 pt-7">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#eef3fb] text-[#1e5eeb]">
+                        <Icon size={22} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[12.5px] text-slate-500">{s.who}</p>
+                        <h3 className="text-[1.3rem] font-bold leading-tight tracking-[-0.02em] text-[#0b1a3b]">{s.title}</h3>
+                      </div>
                     </div>
+                    <span className="shrink-0 rounded-md bg-[#0b1a3b] px-2 py-1 font-mono text-[10.5px] font-semibold tracking-[0.12em] text-[#7cc4f5]">
+                      No. 0{p + 1}
+                    </span>
                   </div>
 
-                  <div className="p-5">
-                    <p className="text-[15.5px] leading-relaxed text-white/80">{s.text}</p>
+                  <p className={`${hand.className} mt-6 text-[19px] text-slate-500`}>sounds familiar?</p>
+                  <ul className="mt-1 space-y-2">
+                    {s.pains.map((pain, k) => (
+                      <li key={pain} className={`${hand.className} relative w-fit text-[20px] leading-snug text-[#0b1a3b]`}>
+                        “{pain}”
+                        <span
+                          aria-hidden
+                          className="tk-strike absolute left-0 right-0 top-[55%] h-[2.5px] rounded-full bg-[#1e5eeb]"
+                          style={{ animationDelay: `${1.1 + k * 0.3}s` }}
+                        />
+                      </li>
+                    ))}
+                  </ul>
 
-                    <p className={`${hand.className} mt-5 text-[21px] text-[#7cc4f5]`}>sounds familiar?</p>
-                    <ul className="mt-1 space-y-1">
-                      {s.pains.map((p) => (
-                        <li key={p} className={`${hand.className} -rotate-1 text-[21px] leading-snug text-white`}>
-                          “{p}”
-                        </li>
-                      ))}
-                    </ul>
+                  <p
+                    className="tk-in mt-5 rounded-2xl bg-[#1e5eeb] px-4 py-3 text-[14.5px] leading-snug text-white"
+                    style={{ animationDelay: "1.8s" }}
+                  >
+                    <span className="font-semibold">We’ve got you. </span>
+                    {s.reply}
+                  </p>
+                </div>
 
-                    <p className="mt-5 text-sm font-semibold">What we’ll bring</p>
-                    <div className="mt-2.5 flex flex-wrap gap-2">
-                      {s.services.map((sv) => (
-                        <span key={sv} className="rounded-full bg-white/10 px-3 py-1.5 text-[13px] font-medium ring-1 ring-white/15">
-                          {sv}
+                {/* perforation */}
+                <div aria-hidden className="relative">
+                  <span className="absolute -left-3 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-[#e3eaf6]" />
+                  <span className="absolute -right-3 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-[#e3eaf6]" />
+                  <div className="mx-5 border-t-2 border-dashed border-[#1e5eeb]/25" />
+                </div>
+
+                {/* bottom: the route */}
+                <div className="px-5 pb-6 pt-6">
+                  <p className={`${hand.className} text-[21px] text-[#1e5eeb]`}>your route</p>
+                  <ol className="relative mt-3 space-y-4 pl-8">
+                    <span
+                      aria-hidden
+                      className="tk-line absolute bottom-2 left-[9px] top-2 w-[2px] rounded-full bg-[#1e5eeb]/35"
+                      style={{ animationDelay: "2.1s" }}
+                    />
+                    {s.services.map((sv, k) => (
+                      <li key={sv} className="tk-in relative" style={{ animationDelay: `${2.2 + k * 0.22}s` }}>
+                        <span
+                          aria-hidden
+                          className="absolute -left-8 top-[3px] grid h-[20px] w-[20px] place-items-center rounded-full bg-white ring-2 ring-[#1e5eeb]"
+                        >
+                          <span className="h-2 w-2 rounded-full bg-[#1e5eeb]" />
                         </span>
-                      ))}
-                    </div>
+                        <p className="text-[15px] font-semibold text-[#0b1a3b]">{sv}</p>
+                        <p className="text-[13px] leading-snug text-slate-500">{describe(sv)}</p>
+                      </li>
+                    ))}
+                  </ol>
 
+                  <div className="tk-in mt-7" style={{ animationDelay: `${2.3 + s.services.length * 0.22}s` }}>
                     <NavLink
                       href="/enquire"
                       onClick={() => pickBusiness(s.business)}
-                      className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl bg-white px-5 py-3.5 text-[15px] font-semibold text-[#0b1a3b] transition-[scale] duration-200 active:scale-[0.97]"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b1a3b] px-5 py-4 text-[15px] font-semibold text-white transition-[scale] duration-200 active:scale-[0.97]"
                     >
                       {s.cta}
                       <ArrowRight size={15} />
                     </NavLink>
                   </div>
-                </article>
-              </Appear>
-            );
-          })}
+                </div>
+              </div>
+            ) : (
+              <div className="h-[640px]" aria-hidden />
+            )}
+          </div>
+        </div>
+
+        {/* dots + hint */}
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center gap-1.5">
+            {personas.map((x, i) => (
+              <button
+                key={x.title}
+                type="button"
+                aria-label={`Show ${x.title}`}
+                onClick={() => choose(i)}
+                className={`h-2 rounded-full transition-[width,background-color] duration-500 ${i === p ? "w-6 bg-[#1e5eeb]" : "w-2 bg-[#0b1a3b]/20"}`}
+                style={{ transitionTimingFunction: SPRING }}
+              />
+            ))}
+          </div>
+          <span className={`${hand.className} text-[17px] text-slate-500`}>swipe to print another</span>
         </div>
 
         <p className="mt-6 text-center text-sm text-slate-600">
