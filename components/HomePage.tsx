@@ -38,7 +38,7 @@ export default function HomePage({ path = "/" }: { path?: string }) {
         <div className="hidden lg:block"><BuiltOn /></div><div className="lg:hidden"><BuiltOnMobile /></div>
         <div className="hidden lg:block"><Solutions /></div><div className="lg:hidden"><SolutionsMobile /></div>
        <div className="hidden lg:block"><WaysToWork /></div><div className="lg:hidden"><WaysMobile /></div>
-          {/* <div className="hidden lg:block"><Pricing /></div><div className="lg:hidden"><PricingMobile /></div> */}
+          <div className="hidden lg:block"><Pricing /></div><div className="lg:hidden"><PricingMobile /></div>
         <Enquire />
       </main>
       <Footer />
